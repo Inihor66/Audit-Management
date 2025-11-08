@@ -1,0 +1,5 @@
+{
+  "name": "Audit Flow Manager",
+  "description": "A multi-role application for firms, students, and admins to manage audit forms, subscriptions, and work assignments.",
+  "requestFramePermissions": []
+}
