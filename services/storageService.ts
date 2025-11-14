@@ -1,12 +1,12 @@
-import { User, FormData, AdminNotification, Role, Subscription } from '../types';
-import { ROLE_CONFIG, API_BASE_URL, CONTACT_INFO } from '../constants';
+import { User, FormData, AdminNotification, Role, Subscription } from './types';
+import { ROLE_CONFIG, CONTACT_INFO, SUBSCRIPTION_PLANS } from './constants';
 
 const USERS_KEY = 'audit_flow_users';
 const FORMS_KEY = 'audit_flow_forms';
 const ADMIN_NOTIFICATIONS_KEY = 'audit_flow_admin_notifications';
 
 // --- Generic Helpers ---
-function getItem<T,>(key: string, defaultValue: T): T {
+function getItem<T>(key: string, defaultValue: T): T {
     try {
         const item = localStorage.getItem(key);
         return item ? JSON.parse(item) : defaultValue;
@@ -16,7 +16,7 @@ function getItem<T,>(key: string, defaultValue: T): T {
     }
 }
 
-function setItem<T,>(key: string, value: T): void {
+function setItem<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
@@ -28,22 +28,17 @@ function setItem<T,>(key: string, value: T): void {
 export const getUsers = (): User[] => getItem<User[]>(USERS_KEY, []);
 export const saveUsers = (users: User[]): void => setItem(USERS_KEY, users);
 
-export const addUser = (newUser: Omit<User, 'id' | 'subscription' | 'notifications' | 'pendingPaymentSS' | 'emailVerified' | 'emailVerification'>): User => {
+export const addUser = (
+    newUser: Omit<User, 'id' | 'subscription' | 'notifications' | 'pendingPaymentSS' | 'emailVerified' | 'emailVerification'>
+): User => {
     const users = getUsers();
-    const userExists = users.some(user => user.email.toLowerCase() === newUser.email.toLowerCase() && user.role === newUser.role);
-    if (userExists) {
-        throw new Error('An account with this email already exists for the selected role.');
-    }
-    
-    // Ensure admin codes are unique
+    const userExists = users.some(u => u.email.toLowerCase() === newUser.email.toLowerCase() && u.role === newUser.role);
+    if (userExists) throw new Error('An account with this email already exists for this role.');
+
     if (newUser.role === Role.ADMIN) {
-        if (!newUser.adminCode) {
-            throw new Error('Admin code is required.');
-        }
-        const adminCodeExists = users.some(user => user.role === Role.ADMIN && user.adminCode?.toLowerCase() === newUser.adminCode?.toLowerCase());
-        if (adminCodeExists) {
-            throw new Error('This Admin Code is already in use. Please choose another.');
-        }
+        if (!newUser.adminCode) throw new Error('Admin code is required.');
+        const adminCodeExists = users.some(u => u.role === Role.ADMIN && u.adminCode?.toLowerCase() === newUser.adminCode?.toLowerCase());
+        if (adminCodeExists) throw new Error('This Admin Code is already in use.');
     }
 
     const user: User = {
@@ -59,7 +54,6 @@ export const addUser = (newUser: Omit<User, 'id' | 'subscription' | 'notificatio
             entriesUsed: 0,
             allowedEntries: ROLE_CONFIG[newUser.role].freeEntries,
         },
-        // For firms and admins require email verification; students are auto-verified
         emailVerified: newUser.role === Role.STUDENT ? true : false,
         emailVerification: null,
     };
@@ -79,7 +73,6 @@ export const updateUser = (updatedUser: User): void => {
     }
 };
 
-
 // --- Form Management ---
 export const getForms = (): FormData[] => getItem<FormData[]>(FORMS_KEY, []);
 export const saveForms = (forms: FormData[]): void => setItem(FORMS_KEY, forms);
@@ -92,7 +85,6 @@ export const addForm = (newForm: Omit<FormData, 'id' | 'createdAt' | 'updatedAt'
         id: crypto.randomUUID(),
         createdAt: now,
         updatedAt: now,
-        // ensure admin edited fee is explicitly stored (null until admin edits)
         adminFeesRange: (newForm as any).adminFeesRange ?? null,
     };
     forms.push(form);
@@ -112,7 +104,6 @@ export const updateForm = (updatedForm: FormData): void => {
     }
 };
 
-
 // --- Admin Notification Management ---
 export const getAdminNotifications = (): AdminNotification[] => getItem<AdminNotification[]>(ADMIN_NOTIFICATIONS_KEY, []);
 export const saveAdminNotifications = (notifications: AdminNotification[]): void => setItem(ADMIN_NOTIFICATIONS_KEY, notifications);
@@ -129,33 +120,7 @@ export const addAdminNotification = (firm: User, ssDataUrl: string): void => {
         handled: false,
     });
     saveAdminNotifications(notifications);
-    // If API is available, notify backend to send an email to admin with the screenshot and a confirmation link
-    if (API_BASE_URL) {
-        try {
-            const notification = notifications[notifications.length - 1];
-            const confirmationUrl = (typeof window !== 'undefined' ? window.location.origin : '') + `/confirm-subscription?firmId=${encodeURIComponent(firm.id)}&notificationId=${encodeURIComponent(notification.id)}`;
-            // Fire-and-forget POST to backend API
-            (async () => {
-                try {
-                    await fetch(`${API_BASE_URL}/admin/notify`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            firmId: firm.id,
-                            firmName: firm.name,
-                            ssDataUrl,
-                            to: CONTACT_INFO.email,
-                            confirmationUrl,
-                        }),
-                    });
-                } catch (err) {
-                    console.error('Failed to call API admin/notify:', err);
-                }
-            })();
-        } catch (err) {
-            console.error('Error preparing admin notify API call:', err);
-        }
-    }
+    console.info(`Admin notified: Payment screenshot from ${firm.name} stored locally.`);
 };
 
 export const updateAdminNotification = (updatedNotification: AdminNotification): void => {
@@ -167,37 +132,24 @@ export const updateAdminNotification = (updatedNotification: AdminNotification):
     }
 };
 
-// --- Email verification helpers (simulation) ---
+// --- Email Verification Simulation ---
 export const generateEmailVerificationCode = (userId: string): string => {
     const users = getUsers();
     const idx = users.findIndex(u => u.id === userId);
     if (idx === -1) throw new Error('User not found');
-    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 15).toISOString(); // 15 minutes
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 15).toISOString();
+
     users[idx].emailVerification = { code, expiresAt };
-    // Simulate sending email by logging to console (replace with real email service)
-    console.info(`Simulated send to ${users[idx].email}: Your verification code is ${code}`);
+    users[idx].emailVerified = false;
     saveUsers(users);
 
-    // If API is configured, request backend to send the verification email (fire-and-forget)
-    if (API_BASE_URL) {
-        (async () => {
-            try {
-                await fetch(`${API_BASE_URL}/api/email/send-verification`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, email: users[idx].email, code, expiresAt }),
-                });
-            } catch (err) {
-                console.error('Failed to call API email/send-verification:', err);
-            }
-        })();
-    }
+    console.info(`Simulated send to ${users[idx].email}: Your verification code is ${code}`);
     return code;
 };
 
 export const resendEmailVerificationCode = (userId: string): string => {
-    // Simply regenerate and "send" again
     return generateEmailVerificationCode(userId);
 };
 
@@ -215,21 +167,13 @@ export const verifyEmailCode = (userId: string, code: string): boolean => {
     return true;
 };
 
-// Clear all stored data (users, forms, admin notifications) and relevant session keys.
-// This is a destructive operation intended for development/testing only.
+// --- Clear All Data (for testing) ---
 export const clearAllData = (): void => {
-    try {
-        localStorage.removeItem(USERS_KEY);
-        localStorage.removeItem(FORMS_KEY);
-        localStorage.removeItem(ADMIN_NOTIFICATIONS_KEY);
-        // remove any other known keys
-        try { localStorage.removeItem('audit_flow_settings'); } catch (e) {}
-        // Clear session keys used for authentication/verification
-        try { sessionStorage.removeItem('loggedInUserId'); } catch (e) {}
-        try { sessionStorage.removeItem('pendingVerificationUserId'); } catch (e) {}
-        try { sessionStorage.removeItem('pendingVerificationRole'); } catch (e) {}
-        console.info('Cleared app stored data (users, forms, admin notifications).');
-    } catch (error) {
-        console.error('Error clearing stored data:', error);
-    }
+    localStorage.removeItem(USERS_KEY);
+    localStorage.removeItem(FORMS_KEY);
+    localStorage.removeItem(ADMIN_NOTIFICATIONS_KEY);
+    sessionStorage.removeItem('loggedInUserId');
+    sessionStorage.removeItem('pendingVerificationUserId');
+    sessionStorage.removeItem('pendingVerificationRole');
+    console.info('Cleared all app data.');
 };
