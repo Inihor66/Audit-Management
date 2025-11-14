@@ -32,7 +32,4 @@ export const CONTACT_INFO = {
 };
 
 // Frontend single-page deployment URL used for API base determination
-export const API_BASE_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:4000"
-    : "https://audit-management-gray.vercel.app";
+export const API_BASE_URL = '';
