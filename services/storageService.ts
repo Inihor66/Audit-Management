@@ -183,7 +183,7 @@ export const generateEmailVerificationCode = (userId: string): string => {
     if (API_BASE_URL) {
         (async () => {
             try {
-                await fetch(`${API_BASE_URL}/email/send-verification`, {
+                await fetch(`${API_BASE_URL}/api/email/send-verification`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, email: users[idx].email, code, expiresAt }),
