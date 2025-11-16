@@ -1,5 +1,9 @@
+export enum Role {
+  FIRM = "firm",
+  STUDENT = "student",
+  ADMIN = "admin",
+}
 export type Role = 'student' | 'firm' | 'admin';
-
 export interface User {
     id: string;
     name: string;
