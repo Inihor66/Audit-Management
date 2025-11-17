@@ -1,14 +1,18 @@
-export async function getEntries() {
-  try {
-    const res = await fetch("https://audit-management-wgbd.onrender.com");
-    const data = await res.json();
+// api/email/api.js
 
-    // Safe handling
-    const freeEntries = data?.freeEntries ?? [];
-    return freeEntries;
+export async function sendVerificationEmail(email, userId, code, expiresAt) {
+  try {
+    const res = await fetch("https://audit-management-wgbd.onrender.com/email/send-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, userId, code, expiresAt })
+    });
+
+    const data = await res.json();
+    return data;
 
   } catch (err) {
-    console.error("API error:", err);
-    return [];
+    console.error("Email API Error:", err);
+    return { error: "Failed" };
   }
 }
