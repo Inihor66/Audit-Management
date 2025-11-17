@@ -37,6 +37,7 @@ const SignUp = ({ onSignUp, onNavigate }) => {
         name: formData.name,
         email: formData.email,
         passwordHash: formData.password,
+        
         ...(role !== Role.STUDENT && { location: formData.location }),
         ...(role === Role.STUDENT && { phone: formData.phone, aadhar: formData.aadhar }),
         ...(role === Role.ADMIN && { adminCode: formData.adminCode }),
@@ -58,8 +59,13 @@ const SignUp = ({ onSignUp, onNavigate }) => {
     }
   };
 
-  const config = ROLE_CONFIG[role] ?? { freeEntries: 0, hex: "#000000" };
-  
+  // IMPORTANT FIX — guarantee ROLE_CONFIG[role] always returns valid object
+  const config = ROLE_CONFIG[role] || {
+    name: "User",
+    freeEntries: 0,
+    hex: "#000000"
+  };
+
   const getRoleButtonClass = () => {
     switch (role) {
       case Role.FIRM:
