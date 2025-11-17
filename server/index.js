@@ -18,23 +18,31 @@ if (!process.env.SENDGRID_API_KEY) {
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-app.use(cors({ origin: true }));
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
+
 app.use(bodyParser.json({ limit: '10mb' }));
 
 // ----------------------
-// FIX: DEFAULT SAFE ROUTE
+// DEFAULT SAFE ROUTE → FIXES YOUR ERROR
 // ----------------------
 app.get("/", (req, res) => {
   res.json({
-    freeEntries: [],   // <-- THIS FIXES YOUR ERROR
-    message: "AuditFlow backend running"
+    freeEntries: [],   // IMPORTANT FIX
+    message: "AuditFlow backend running",
   });
 });
 
-// Health check
+// Health Check
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-// Send verification email
+// ---------------------------------------------
+// SEND EMAIL VERIFICATION USING SENDGRID
+// ---------------------------------------------
 app.post('/email/send-verification', async (req, res) => {
   try {
     const { userId, email, code, expiresAt } = req.body;
@@ -43,29 +51,30 @@ app.post('/email/send-verification', async (req, res) => {
       return res.status(400).json({ error: 'Missing email or code' });
     }
 
-    const verifyUrl = `${FRONTEND_ORIGIN}/verify?userId=${encodeURIComponent(
-      userId || ''
-    )}&code=${encodeURIComponent(code)}`;
+    const verifyUrl =
+      `${FRONTEND_ORIGIN}/verify?userId=${encodeURIComponent(userId || '')}&code=${encodeURIComponent(code)}`;
 
     const msg = {
       to: email,
       from: process.env.SENDGRID_FROM,
-      subject: "AuditFlow — Email verification code",
+      subject: "AuditFlow — Email Verification Code",
       text: `Your verification code is ${code}. It expires at ${new Date(expiresAt).toLocaleString()}.
-Open the verification link: ${verifyUrl}`,
-      html: `<p>Your verification code is <strong>${code}</strong>.</p>
-             <p>It expires at <strong>${new Date(expiresAt).toLocaleString()}</strong>.</p>
-             <p><a href="${verifyUrl}">Open verification in the app</a></p>`
+Open verification link: ${verifyUrl}`,
+      html: `
+        <p>Your verification code is <strong>${code}</strong>.</p>
+        <p>It expires at <strong>${new Date(expiresAt).toLocaleString()}</strong>.</p>
+        <p><a href="${verifyUrl}">Verify Email</a></p>
+      `,
     };
 
     await sgMail.send(msg);
 
-    console.log("Sent verification email:", email);
+    console.log("Sent verification email to:", email);
     return res.json({ ok: true });
 
   } catch (err) {
     console.error("Email send error:", err);
-    return res.status(500).json({ error: "Failed to send" });
+    return res.status(500).json({ error: "Failed to send email" });
   }
 });
 
