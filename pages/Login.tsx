@@ -13,7 +13,7 @@ const Login = ({ onLogin, onNavigate, role }: LoginProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const config = ROLE_CONFIG[role];
+  const config = ROLE_CONFIG[role] ?? { freeEntries: 0, hex: "#000000" };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
