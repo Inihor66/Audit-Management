@@ -58,8 +58,8 @@ const SignUp = ({ onSignUp, onNavigate }) => {
     }
   };
 
-  const config = ROLE_CONFIG[role];
-
+  const config = ROLE_CONFIG[role] ?? { freeEntries: 0, hex: "#000000" };
+  
   const getRoleButtonClass = () => {
     switch (role) {
       case Role.FIRM:
