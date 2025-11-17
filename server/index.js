@@ -21,6 +21,16 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 app.use(cors({ origin: true }));
 app.use(bodyParser.json({ limit: '10mb' }));
 
+// ----------------------
+// FIX: DEFAULT SAFE ROUTE
+// ----------------------
+app.get("/", (req, res) => {
+  res.json({
+    freeEntries: [],   // <-- THIS FIXES YOUR ERROR
+    message: "AuditFlow backend running"
+  });
+});
+
 // Health check
 app.get('/health', (req, res) => res.json({ ok: true }));
 
@@ -43,9 +53,9 @@ app.post('/email/send-verification', async (req, res) => {
       subject: "AuditFlow — Email verification code",
       text: `Your verification code is ${code}. It expires at ${new Date(expiresAt).toLocaleString()}.
 Open the verification link: ${verifyUrl}`,
-      html: `<p>Your verification code is <strong>${code}</strong>. 
-<p>It expires at <strong>${new Date(expiresAt).toLocaleString()}</strong>.</p>
-<p><a href="${verifyUrl}">Open verification in the app</a></p>`
+      html: `<p>Your verification code is <strong>${code}</strong>.</p>
+             <p>It expires at <strong>${new Date(expiresAt).toLocaleString()}</strong>.</p>
+             <p><a href="${verifyUrl}">Open verification in the app</a></p>`
     };
 
     await sgMail.send(msg);
