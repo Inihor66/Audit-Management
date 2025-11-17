@@ -33,3 +33,19 @@ export const CONTACT_INFO = {
 
 // Frontend single-page deployment URL used for API base determination
 export const API_BASE_URL = '';
+
+export const plans = {
+  basic: {
+    name: "Basic",
+    freeEntries: 10,
+  },
+  standard: {
+    name: "Standard",
+    freeEntries: 50,
+  },
+  premium: {
+    name: "Premium",
+    freeEntries: 200,
+  }
+};
+
