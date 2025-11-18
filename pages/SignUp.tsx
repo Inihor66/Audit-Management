@@ -62,7 +62,6 @@ const SignUp = ({ onSignUp, onNavigate }) => {
   // IMPORTANT FIX — guarantee ROLE_CONFIG[role] always returns valid object
   const config = ROLE_CONFIG[role] || {
     name: "User",
-    freeEntries: 0,
     hex: "#000000"
   };
 
