@@ -1,4 +1,3 @@
-// src/components/GeminiData.tsx
 import React, { useEffect, useState } from 'react';
 import { fetchGeminiData } from '../services/gemini';
 
