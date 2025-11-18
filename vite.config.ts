@@ -3,7 +3,7 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-  // Load env variables with VITE_ prefix
+  // Load environment variables that start with VITE_
   const env = loadEnv(mode, process.cwd(), 'VITE_');
 
   return {
@@ -13,18 +13,19 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react()],
     define: {
-      'process.env': env
+      // Makes env variables available in frontend safely
+      'process.env': { ...env },
     },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
-      }
+      },
     },
     build: {
       rollupOptions: {
-        // Prevent Node modules from being bundled in client code
-        external: ['path', 'fs']
-      }
-    }
+        // Prevent Node-only modules from being bundled in frontend
+        external: ['path', 'fs', 'os', 'net', 'crypto'],
+      },
+    },
   };
 });
