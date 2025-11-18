@@ -6,7 +6,7 @@ import { ROLE_CONFIG } from '../constants';
 interface SignUpProps {
   onSignUp: (user: any) => void;
   onNavigate: (page: string) => void;
-  role?: Role; // optional, default handled below
+  role?: Role;
 }
 
 const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
@@ -62,7 +62,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
       if (role === Role.FIRM || role === Role.ADMIN) {
         storage.generateEmailVerificationCode(newUser.id);
         sessionStorage.setItem('pendingVerificationUserId', newUser.id);
-        sessionStorage.setItem('pendingVerificationRole', role.toString());
+        sessionStorage.setItem('pendingVerificationRole', role.toString()); // store enum as string
         onNavigate('verify');
         return;
       }
@@ -112,7 +112,6 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
           <div className="form-group">
             <label>Phone</label>
             <input name="phone" placeholder="Phone" type="tel" required onChange={handleInputChange} />
-
             <label>Aadhar</label>
             <input name="aadhar" placeholder="Aadhar" type="text" required onChange={handleInputChange} />
           </div>
