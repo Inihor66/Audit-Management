@@ -15,6 +15,16 @@ const VerifyEmail = ({ onVerified, onNavigate }: VerifyEmailProps) => {
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
+  const getRoleFromSession = (): Role | undefined => {
+    const roleStr = sessionStorage.getItem('pendingVerificationRole');
+    if (roleStr === 'FIRM') return Role.FIRM;
+    if (roleStr === 'STUDENT') return Role.STUDENT;
+    if (roleStr === 'ADMIN') return Role.ADMIN;
+    return undefined;
+  };
+
+  const role = getRoleFromSession();
+
   useEffect(() => {
     const id = sessionStorage.getItem('pendingVerificationUserId');
     setPendingUserId(id);
@@ -30,29 +40,18 @@ const VerifyEmail = ({ onVerified, onNavigate }: VerifyEmailProps) => {
 
   const handleVerify = () => {
     setError('');
-    if (!pendingUserId) {
-      setError('No pending verification user.');
-      return;
-    }
-    if (!/^\d{6}$/.test(code.trim())) {
-      setError('Enter the 6-digit code sent to your email.');
-      return;
-    }
+    if (!pendingUserId) return setError('No pending verification user.');
+    if (!/^\d{6}$/.test(code.trim())) return setError('Enter the 6-digit code sent to your email.');
 
     try {
       const ok = storage.verifyEmailCode(pendingUserId, code.trim());
-      if (!ok) {
-        setError('Invalid or expired code.');
-        return;
-      }
+      if (!ok) return setError('Invalid or expired code.');
       const verifiedUser = storage.getUserById(pendingUserId);
       if (verifiedUser) {
         sessionStorage.removeItem('pendingVerificationUserId');
         sessionStorage.removeItem('pendingVerificationRole');
         onVerified(verifiedUser);
-      } else {
-        setError('Verified but user not found.');
-      }
+      } else setError('Verified but user not found.');
     } catch (err: any) {
       setError(err.message || 'Verification failed.');
     }
@@ -60,10 +59,7 @@ const VerifyEmail = ({ onVerified, onNavigate }: VerifyEmailProps) => {
 
   const handleResend = () => {
     setError('');
-    if (!pendingUserId) {
-      setError('No pending verification user.');
-      return;
-    }
+    if (!pendingUserId) return setError('No pending verification user.');
     try {
       storage.resendEmailVerificationCode(pendingUserId);
       setInfo('Verification code resent to your email.');
@@ -71,16 +67,6 @@ const VerifyEmail = ({ onVerified, onNavigate }: VerifyEmailProps) => {
       setError(err.message || 'Resend failed.');
     }
   };
-
-  const getRoleFromSession = (): Role | undefined => {
-    const roleStr = sessionStorage.getItem('pendingVerificationRole');
-    if (roleStr === 'FIRM') return Role.FIRM;
-    if (roleStr === 'STUDENT') return Role.STUDENT;
-    if (roleStr === 'ADMIN') return Role.ADMIN;
-    return undefined;
-  };
-
-  const role = getRoleFromSession();
 
   return (
     <div className="page-center">
@@ -107,7 +93,7 @@ const VerifyEmail = ({ onVerified, onNavigate }: VerifyEmailProps) => {
         </div>
 
         <div className="auth-links" style={{ marginTop: '1rem', textAlign: 'center' }}>
-          <button onClick={() => onNavigate('login', role)} style={{ background: 'none', border: 'none', color: 'var(--color-firm)', cursor: 'pointer' }}>
+          <button onClick={() => onNavigate('login', role)} style={{ background: 'none', border: 'none', color: 'var(--color-firm)', cursor: 'pointer', marginBottom: '0.5rem' }}>
             Have an account? Login
           </button>
           <br />
