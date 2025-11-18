@@ -51,10 +51,12 @@ export const addUser = (newUser) => {
         if (adminCodeExists) throw new Error('This Admin Code is already in use.');
     }
 
-    // FIXED: removed freeEntries (this was causing error)
+    // FINAL FIX — freeEntries added
     const user = {
         ...newUser,
         id: crypto.randomUUID(),
+
+        freeEntries: 0,    // ⭐ FIXED ERROR (Guarantees field exists) ⭐
 
         pendingPaymentSS: null,
         notifications: [],
@@ -65,7 +67,7 @@ export const addUser = (newUser) => {
             startDate: null,
             expiryDate: null,
             entriesUsed: 0,
-            allowedEntries: 0, // FIXED LINE
+            allowedEntries: 0,
         },
 
         emailVerified: newUser.role === Role.STUDENT ? true : false,
@@ -79,6 +81,7 @@ export const addUser = (newUser) => {
 
 // get / update user
 export const getUserById = (id) => getUsers().find((u) => u.id === id);
+
 export const updateUser = (updatedUser) => {
     const users = getUsers();
     const index = users.findIndex((u) => u.id === updatedUser.id);
