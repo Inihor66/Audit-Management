@@ -7,8 +7,8 @@ const VerifyEmail = ({ onVerified, onNavigate }) => {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
-  const [pendingUserId, setPendingUserId] = useState(null);
-  const [user, setUser] = useState(null);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -77,7 +77,7 @@ const VerifyEmail = ({ onVerified, onNavigate }) => {
       } else {
         setError('Verified but user not found.');
       }
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || 'Verification failed.');
     }
   };
@@ -91,9 +91,32 @@ const VerifyEmail = ({ onVerified, onNavigate }) => {
     try {
       storage.resendEmailVerificationCode(pendingUserId);
       setInfo('Verification code resent to your email.');
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || 'Resend failed.');
     }
+  };
+
+  const handleLoginNavigate = () => {
+    const roleStr = sessionStorage.getItem('pendingVerificationRole');
+    let roleArg: Role | undefined;
+
+    if (roleStr) {
+      switch (roleStr.toUpperCase()) {
+        case 'FIRM':
+          roleArg = Role.FIRM;
+          break;
+        case 'STUDENT':
+          roleArg = Role.STUDENT;
+          break;
+        case 'ADMIN':
+          roleArg = Role.ADMIN;
+          break;
+        default:
+          roleArg = undefined;
+      }
+    }
+
+    onNavigate('login', roleArg);
   };
 
   return (
@@ -132,11 +155,7 @@ const VerifyEmail = ({ onVerified, onNavigate }) => {
 
             <div className="auth-links" style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
               <button
-                onClick={() => {
-                  const roleStr = sessionStorage.getItem('pendingVerificationRole');
-                  const roleArg = roleStr || undefined;
-                  onNavigate('login', roleArg);
-                }}
+                onClick={handleLoginNavigate}
                 style={{ background: 'none', border: 'none', color: 'var(--color-firm)', cursor: 'pointer' }}
               >
                 Have an account? Login
