@@ -9,7 +9,6 @@ export const ROLE_CONFIG = {
   [Role.STUDENT]: {
     name: 'Student',
     hex: '#F97316',
-    freeEntries: 0,
   },
   [Role.ADMIN]: {
     name: 'Admin',
