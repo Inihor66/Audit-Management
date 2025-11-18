@@ -6,7 +6,7 @@ import { BriefcaseIcon } from './components/icons/BriefcaseIcon';
 import { GraduationCapIcon } from './components/icons/GraduationCapIcon';
 import { ShieldCheckIcon } from './components/icons/ShieldCheckIcon';
 
-// Dynamically import pages to keep this file cleaner
+// Lazy load pages
 const FirmDashboard = React.lazy(() => import('./pages/firm/FirmDashboard'));
 const StudentDashboard = React.lazy(() => import('./pages/student/StudentDashboard'));
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
@@ -16,6 +16,27 @@ const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
 const ConfirmSubscription = React.lazy(() => import('./pages/ConfirmSubscription'));
 const DevReset = React.lazy(() => import('./pages/DevReset'));
 
+// Loader component for Suspense fallback
+const Loader = () => <div className="page-center"><p>Loading...</p></div>;
+
+// Role button component
+const RoleButton = ({ role = Role.FIRM, icon, onClick }: { role?: Role, icon: React.ReactNode, onClick: () => void }) => {
+    const config = ROLE_CONFIG[role] ?? { hex: "#000000", name: "Unknown" };
+    const roleColorStyle = { backgroundColor: config.hex };
+
+    return (
+        <button
+            onClick={onClick}
+            className="role-button"
+            style={roleColorStyle}
+        >
+            {icon}
+            Login as {config.name}
+        </button>
+    );
+};
+
+// Welcome page
 const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, role?: Role) => void }) => {
     return (
         <div className="page-center welcome-page">
@@ -40,31 +61,13 @@ const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, role?: Role) =
                     onClick={() => onNavigate('login', Role.ADMIN)}
                 />
             </div>
-             {/* The "Sign Up" button was removed from here per user request */}
         </div>
     );
 };
-if (!role) role = Role.FIRM; // default fallback
-const RoleButton = ({ role, icon, onClick }: { role: Role, icon: React.ReactNode, onClick: () => void }) => {
-    const config = ROLE_CONFIG[role] ?? { hex: "#000000" };
-    const roleColorStyle = { backgroundColor: config.hex };
-
-    return (
-        <button
-            onClick={onClick}
-            className="role-button"
-            style={roleColorStyle}
-        >
-            {icon}
-            Login as {config.name}
-        </button>
-    );
-};
-
 
 export default function App() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [page, setPage] = useState('welcome'); // welcome, login, signup, dashboard
+    const [page, setPage] = useState('welcome');
     const [selectedRole, setSelectedRole] = useState<Role | undefined>();
     const [loading, setLoading] = useState(true);
 
@@ -77,15 +80,17 @@ export default function App() {
                 setPage('dashboard');
             }
         }
-        // If the app was opened via a confirmation link, show the confirmation page
+
+        // Check for confirmation page in URL
         try {
             const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
             if (pathname && pathname.startsWith('/confirm-subscription')) {
                 setPage('confirm-subscription');
             }
         } catch (err) {
-            // ignore
+            // ignore errors
         }
+
         setLoading(false);
     }, []);
 
@@ -94,7 +99,7 @@ export default function App() {
         setCurrentUser(user);
         setPage('dashboard');
     };
-    
+
     const handleLogout = () => {
         sessionStorage.removeItem('loggedInUserId');
         setCurrentUser(null);
@@ -103,33 +108,27 @@ export default function App() {
 
     const handleNavigate = useCallback((newPage: string, role?: Role) => {
         setPage(newPage);
-        if (role) {
-            setSelectedRole(role);
-        }
+        if (role) setSelectedRole(role);
     }, []);
-    
-    const refreshUser = () => {
+
+    const refreshUser = useCallback(() => {
         if(currentUser) {
             const freshUser = storage.getUserById(currentUser.id);
-            if (freshUser) {
-                setCurrentUser(freshUser);
-            }
+            if(freshUser) setCurrentUser(freshUser);
         }
-    };
+    }, [currentUser]);
 
     const renderPage = () => {
-        if (loading) {
-            return <div className="page-center"><p>Loading...</p></div>;
-        }
+        if (loading) return <Loader />;
 
         if (currentUser && page === 'dashboard') {
             switch (currentUser.role) {
                 case Role.FIRM:
-                    return <FirmDashboard user={currentUser} onLogout={handleLogout} refreshUser={refreshUser}/>;
+                    return <FirmDashboard user={currentUser} onLogout={handleLogout} refreshUser={refreshUser} />;
                 case Role.STUDENT:
-                    return <StudentDashboard user={currentUser} onLogout={handleLogout} refreshUser={refreshUser}/>;
+                    return <StudentDashboard user={currentUser} onLogout={handleLogout} refreshUser={refreshUser} />;
                 case Role.ADMIN:
-                    return <AdminDashboard user={currentUser} onLogout={handleLogout} refreshUser={refreshUser}/>;
+                    return <AdminDashboard user={currentUser} onLogout={handleLogout} refreshUser={refreshUser} />;
                 default:
                     handleLogout();
                     return <WelcomePage onNavigate={handleNavigate} />;
@@ -138,7 +137,7 @@ export default function App() {
 
         switch (page) {
             case 'login':
-                return <Login onLogin={handleLogin} onNavigate={handleNavigate} role={selectedRole!} />;
+                return <Login onLogin={handleLogin} onNavigate={handleNavigate} role={selectedRole ?? Role.FIRM} />;
             case 'signup':
                 return <SignUp onSignUp={handleLogin} onNavigate={handleNavigate} />;
             case 'verify':
@@ -154,7 +153,7 @@ export default function App() {
     };
 
     return (
-        <React.Suspense fallback={<div className="page-center"><p>Loading...</p></div>}>
+        <React.Suspense fallback={<Loader />}>
             {renderPage()}
         </React.Suspense>
     );
