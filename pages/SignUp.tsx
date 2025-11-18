@@ -153,8 +153,8 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
           <button type="submit" className={`btn ${getButtonClass()}`}>
             Sign Up as {config.name}
           </button>
-          <button type="button" onClick={() => onNavigate('welcome')} className="btn btn-secondary">
-            Back
+          <button type="button" onClick={() => onNavigate('welcome')} className="btn btn-primary">
+            Back to role selection
           </button>
         </div>
       </form>
