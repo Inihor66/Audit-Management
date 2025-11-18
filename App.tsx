@@ -46,7 +46,7 @@ const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, role?: Role) =
 };
 if (!role) role = Role.FIRM; // default fallback
 const RoleButton = ({ role, icon, onClick }: { role: Role, icon: React.ReactNode, onClick: () => void }) => {
-    const config = ROLE_CONFIG[role] ?? { freeEntries: 0, hex: "#000000" };
+    const config = ROLE_CONFIG[role] ?? { hex: "#000000" };
     const roleColorStyle = { backgroundColor: config.hex };
 
     return (
