@@ -27,7 +27,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -62,7 +62,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
       if (role === Role.FIRM || role === Role.ADMIN) {
         storage.generateEmailVerificationCode(newUser.id);
         sessionStorage.setItem('pendingVerificationUserId', newUser.id);
-        sessionStorage.setItem('pendingVerificationRole', role.toString()); // store enum as string
+        sessionStorage.setItem('pendingVerificationRole', role.toString());
         onNavigate('verify');
         return;
       }
@@ -97,39 +97,39 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
         {(role === Role.FIRM || role === Role.ADMIN) && (
           <div className="form-group">
             <label>Location</label>
-            <input name="location" placeholder="Location" type="text" required onChange={handleInputChange} />
+            <input name="location" type="text" required onChange={handleInputChange} />
           </div>
         )}
 
         {role === Role.ADMIN && (
           <div className="form-group">
             <label>Admin Code</label>
-            <input name="adminCode" placeholder="Admin Code" type="text" required onChange={handleInputChange} />
+            <input name="adminCode" type="text" required onChange={handleInputChange} />
           </div>
         )}
 
         {role === Role.STUDENT && (
           <div className="form-group">
             <label>Phone</label>
-            <input name="phone" placeholder="Phone" type="tel" required onChange={handleInputChange} />
+            <input name="phone" type="tel" required onChange={handleInputChange} />
             <label>Aadhar</label>
-            <input name="aadhar" placeholder="Aadhar" type="text" required onChange={handleInputChange} />
+            <input name="aadhar" type="text" required onChange={handleInputChange} />
           </div>
         )}
 
         <div className="form-group">
           <label>Email</label>
-          <input name="email" placeholder="Email" type="email" required onChange={handleInputChange} />
+          <input name="email" type="email" required onChange={handleInputChange} />
         </div>
 
         <div className="form-group">
           <label>Password</label>
-          <input name="password" placeholder="Password" type="password" required onChange={handleInputChange} />
+          <input name="password" type="password" required onChange={handleInputChange} />
         </div>
 
         <div className="form-group">
           <label>Confirm Password</label>
-          <input name="confirmPassword" placeholder="Confirm Password" type="password" required onChange={handleInputChange} />
+          <input name="confirmPassword" type="password" required onChange={handleInputChange} />
         </div>
 
         {error && <p className="form-error">{error}</p>}
