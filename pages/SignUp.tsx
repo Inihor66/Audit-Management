@@ -6,11 +6,10 @@ import { ROLE_CONFIG } from '../constants';
 interface SignUpProps {
   onSignUp: (user: any) => void;
   onNavigate: (page: string) => void;
-  role?: Role; // make optional, default handled below
+  role?: Role; // optional, default handled below
 }
 
 const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
-  // Default to FIRM if initialRole is not provided
   const [role, setRole] = useState<Role>(initialRole || Role.FIRM);
 
   const [formData, setFormData] = useState({
@@ -63,7 +62,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
       if (role === Role.FIRM || role === Role.ADMIN) {
         storage.generateEmailVerificationCode(newUser.id);
         sessionStorage.setItem('pendingVerificationUserId', newUser.id);
-        sessionStorage.setItem('pendingVerificationRole', role.toString()); // store as string
+        sessionStorage.setItem('pendingVerificationRole', role.toString());
         onNavigate('verify');
         return;
       }
@@ -81,39 +80,65 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
       <form onSubmit={handleSubmit} className="auth-form-card">
         <h2>Create your account</h2>
 
-        <label>I am a...</label>
-        <select value={role} onChange={handleRoleChange}>
-          <option value="FIRM">Firm</option>
-          <option value="STUDENT">Student</option>
-          <option value="ADMIN">Admin</option>
-        </select>
+        <div className="form-group">
+          <label>I am a...</label>
+          <select value={role} onChange={handleRoleChange}>
+            <option value="FIRM">Firm</option>
+            <option value="STUDENT">Student</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </div>
 
-        <label>{role === Role.FIRM ? 'Firm Name' : 'Full Name'}</label>
-        <input name="name" type="text" required onChange={handleInputChange} />
+        <div className="form-group">
+          <label>{role === Role.FIRM ? 'Firm Name' : 'Full Name'}</label>
+          <input name="name" type="text" required onChange={handleInputChange} />
+        </div>
 
         {(role === Role.FIRM || role === Role.ADMIN) && (
-          <input name="location" placeholder="Location" type="text" required onChange={handleInputChange} />
+          <div className="form-group">
+            <label>Location</label>
+            <input name="location" placeholder="Location" type="text" required onChange={handleInputChange} />
+          </div>
         )}
 
         {role === Role.ADMIN && (
-          <input name="adminCode" placeholder="Admin Code" type="text" required onChange={handleInputChange} />
+          <div className="form-group">
+            <label>Admin Code</label>
+            <input name="adminCode" placeholder="Admin Code" type="text" required onChange={handleInputChange} />
+          </div>
         )}
 
         {role === Role.STUDENT && (
-          <>
+          <div className="form-group">
+            <label>Phone</label>
             <input name="phone" placeholder="Phone" type="tel" required onChange={handleInputChange} />
+
+            <label>Aadhar</label>
             <input name="aadhar" placeholder="Aadhar" type="text" required onChange={handleInputChange} />
-          </>
+          </div>
         )}
 
-        <input name="email" placeholder="Email" type="email" required onChange={handleInputChange} />
-        <input name="password" placeholder="Password" type="password" required onChange={handleInputChange} />
-        <input name="confirmPassword" placeholder="Confirm Password" type="password" required onChange={handleInputChange} />
+        <div className="form-group">
+          <label>Email</label>
+          <input name="email" placeholder="Email" type="email" required onChange={handleInputChange} />
+        </div>
+
+        <div className="form-group">
+          <label>Password</label>
+          <input name="password" placeholder="Password" type="password" required onChange={handleInputChange} />
+        </div>
+
+        <div className="form-group">
+          <label>Confirm Password</label>
+          <input name="confirmPassword" placeholder="Confirm Password" type="password" required onChange={handleInputChange} />
+        </div>
 
         {error && <p className="form-error">{error}</p>}
 
-        <button type="submit">Sign Up as {config.name}</button>
-        <button type="button" onClick={() => onNavigate('welcome')}>Back</button>
+        <div className="form-group">
+          <button type="submit">Sign Up as {config.name}</button>
+          <button type="button" onClick={() => onNavigate('welcome')}>Back</button>
+        </div>
       </form>
     </div>
   );
