@@ -75,6 +75,16 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
   const config = ROLE_CONFIG[role] || { name: 'User', hex: '#000000' };
 
+  // Button color class based on role
+  const getButtonClass = () => {
+    switch (role) {
+      case Role.FIRM: return 'btn-firm';
+      case Role.STUDENT: return 'btn-student';
+      case Role.ADMIN: return 'btn-admin';
+      default: return 'btn';
+    }
+  };
+
   return (
     <div className="page-center">
       <form onSubmit={handleSubmit} className="auth-form-card">
@@ -82,7 +92,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
         <div className="form-group">
           <label>I am a...</label>
-          <select value={role} onChange={handleRoleChange}>
+          <select value={role} onChange={handleRoleChange} className="form-select">
             <option value="FIRM">Firm</option>
             <option value="STUDENT">Student</option>
             <option value="ADMIN">Admin</option>
@@ -91,52 +101,56 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
         <div className="form-group">
           <label>{role === Role.FIRM ? 'Firm Name' : 'Full Name'}</label>
-          <input name="name" type="text" required onChange={handleInputChange} />
+          <input name="name" type="text" required className="form-input" onChange={handleInputChange} />
         </div>
 
         {(role === Role.FIRM || role === Role.ADMIN) && (
           <div className="form-group">
             <label>Location</label>
-            <input name="location" type="text" required onChange={handleInputChange} />
+            <input name="location" type="text" required className="form-input" onChange={handleInputChange} />
           </div>
         )}
 
         {role === Role.ADMIN && (
           <div className="form-group">
             <label>Admin Code</label>
-            <input name="adminCode" type="text" required onChange={handleInputChange} />
+            <input name="adminCode" type="text" required className="form-input" onChange={handleInputChange} />
           </div>
         )}
 
         {role === Role.STUDENT && (
-          <div className="form-group">
-            <label>Phone</label>
-            <input name="phone" type="tel" required onChange={handleInputChange} />
-            <label>Aadhar</label>
-            <input name="aadhar" type="text" required onChange={handleInputChange} />
-          </div>
+          <>
+            <div className="form-group">
+              <label>Phone</label>
+              <input name="phone" type="tel" required className="form-input" onChange={handleInputChange} />
+            </div>
+            <div className="form-group">
+              <label>Aadhar</label>
+              <input name="aadhar" type="text" required className="form-input" onChange={handleInputChange} />
+            </div>
+          </>
         )}
 
         <div className="form-group">
           <label>Email</label>
-          <input name="email" type="email" required onChange={handleInputChange} />
+          <input name="email" type="email" required className="form-input" onChange={handleInputChange} />
         </div>
 
         <div className="form-group">
           <label>Password</label>
-          <input name="password" type="password" required onChange={handleInputChange} />
+          <input name="password" type="password" required className="form-input" onChange={handleInputChange} />
         </div>
 
         <div className="form-group">
           <label>Confirm Password</label>
-          <input name="confirmPassword" type="password" required onChange={handleInputChange} />
+          <input name="confirmPassword" type="password" required className="form-input" onChange={handleInputChange} />
         </div>
 
         {error && <p className="form-error">{error}</p>}
 
-        <div className="form-group">
-          <button type="submit">Sign Up as {config.name}</button>
-          <button type="button" onClick={() => onNavigate('welcome')}>Back</button>
+        <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <button type="submit" className={`btn ${getButtonClass()}`}>Sign Up as {config.name}</button>
+          <button type="button" onClick={() => onNavigate('welcome')} className="btn btn-secondary">Back</button>
         </div>
       </form>
     </div>
