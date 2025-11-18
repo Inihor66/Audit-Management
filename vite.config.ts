@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       rollupOptions: {
-        // Prevent Node built-ins from being bundled
+        // Prevent Node modules from being bundled in client code
         external: ['path', 'fs']
       }
     }
