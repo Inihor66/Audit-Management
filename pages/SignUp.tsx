@@ -10,6 +10,7 @@ interface SignUpProps {
 }
 
 const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
+  // Default role set karo agar initialRole undefined ho
   const [role, setRole] = useState<Role>(initialRole || Role.FIRM);
 
   const [formData, setFormData] = useState({
@@ -25,11 +26,13 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
   const [error, setError] = useState('');
 
+  // Input change handle
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Role change handle
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value.toUpperCase();
     if (value === 'FIRM') setRole(Role.FIRM);
@@ -37,6 +40,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
     else if (value === 'ADMIN') setRole(Role.ADMIN);
   };
 
+  // Submit handle
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -69,20 +73,17 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
       onSignUp(newUser);
     } catch (err: any) {
-      setError(err.message || 'An unknown error occurred.');
+      setError(err?.message || 'An unknown error occurred.');
     }
   };
 
+  // Role config for button text/color
   const config = ROLE_CONFIG[role] || { name: 'User', hex: '#000000' };
-
-  // Button color class based on role
   const getButtonClass = () => {
-    switch (role) {
-      case Role.FIRM: return 'btn-firm';
-      case Role.STUDENT: return 'btn-student';
-      case Role.ADMIN: return 'btn-admin';
-      default: return 'btn';
-    }
+    if (role === Role.FIRM) return 'btn-firm';
+    if (role === Role.STUDENT) return 'btn-student';
+    if (role === Role.ADMIN) return 'btn-admin';
+    return 'btn';
   };
 
   return (
@@ -149,8 +150,12 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
         {error && <p className="form-error">{error}</p>}
 
         <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <button type="submit" className={`btn ${getButtonClass()}`}>Sign Up as {config.name}</button>
-          <button type="button" onClick={() => onNavigate('welcome')} className="btn btn-secondary">Back</button>
+          <button type="submit" className={`btn ${getButtonClass()}`}>
+            Sign Up as {config.name}
+          </button>
+          <button type="button" onClick={() => onNavigate('welcome')} className="btn btn-secondary">
+            Back
+          </button>
         </div>
       </form>
     </div>
