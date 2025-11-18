@@ -16,7 +16,7 @@ const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
 const ConfirmSubscription = React.lazy(() => import('./pages/ConfirmSubscription'));
 const DevReset = React.lazy(() => import('./pages/DevReset'));
 
-// Loader component for Suspense fallback
+// Loader fallback
 const Loader = () => <div className="page-center"><p>Loading...</p></div>;
 
 // Role button component
@@ -30,40 +30,25 @@ const RoleButton = ({ role = Role.FIRM, icon, onClick }: { role?: Role, icon: Re
             className="role-button"
             style={roleColorStyle}
         >
-            {icon}
-            Login as {config.name}
+            {icon} Login as {config.name}
         </button>
     );
 };
 
-// Welcome page
-const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, role?: Role) => void }) => {
-    return (
-        <div className="page-center welcome-page">
-            <div className="text-center">
-                <h1>Welcome</h1>
-                <p>Choose your role to get started</p>
-            </div>
-            <div className="roles-container">
-                <RoleButton 
-                    role={Role.FIRM} 
-                    icon={<BriefcaseIcon />}
-                    onClick={() => onNavigate('login', Role.FIRM)}
-                />
-                <RoleButton 
-                    role={Role.STUDENT} 
-                    icon={<GraduationCapIcon />}
-                    onClick={() => onNavigate('login', Role.STUDENT)}
-                />
-                <RoleButton 
-                    role={Role.ADMIN} 
-                    icon={<ShieldCheckIcon />}
-                    onClick={() => onNavigate('login', Role.ADMIN)}
-                />
-            </div>
+// Welcome Page
+const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, role?: Role) => void }) => (
+    <div className="page-center welcome-page">
+        <div className="text-center">
+            <h1>Welcome</h1>
+            <p>Choose your role to get started</p>
         </div>
-    );
-};
+        <div className="roles-container">
+            <RoleButton role={Role.FIRM} icon={<BriefcaseIcon />} onClick={() => onNavigate('login', Role.FIRM)} />
+            <RoleButton role={Role.STUDENT} icon={<GraduationCapIcon />} onClick={() => onNavigate('login', Role.STUDENT)} />
+            <RoleButton role={Role.ADMIN} icon={<ShieldCheckIcon />} onClick={() => onNavigate('login', Role.ADMIN)} />
+        </div>
+    </div>
+);
 
 export default function App() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -81,14 +66,9 @@ export default function App() {
             }
         }
 
-        // Check for confirmation page in URL
-        try {
-            const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-            if (pathname && pathname.startsWith('/confirm-subscription')) {
-                setPage('confirm-subscription');
-            }
-        } catch (err) {
-            // ignore errors
+        const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+        if (pathname && pathname.startsWith('/confirm-subscription')) {
+            setPage('confirm-subscription');
         }
 
         setLoading(false);
@@ -139,7 +119,7 @@ export default function App() {
             case 'login':
                 return <Login onLogin={handleLogin} onNavigate={handleNavigate} role={selectedRole ?? Role.FIRM} />;
             case 'signup':
-                return <SignUp onSignUp={handleLogin} onNavigate={handleNavigate} />;
+                return <SignUp onSignUp={handleLogin} onNavigate={handleNavigate} role={selectedRole ?? Role.FIRM} />;
             case 'verify':
                 return <VerifyEmail onVerified={handleLogin} onNavigate={handleNavigate} />;
             case 'confirm-subscription':
@@ -152,9 +132,5 @@ export default function App() {
         }
     };
 
-    return (
-        <React.Suspense fallback={<Loader />}>
-            {renderPage()}
-        </React.Suspense>
-    );
+    return <React.Suspense fallback={<Loader />}>{renderPage()}</React.Suspense>;
 }
