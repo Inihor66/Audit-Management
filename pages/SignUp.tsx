@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Role } from '../types';
 import * as storage from '../services/storageService';
-import { ROLE_CONFIG } from '../constants/roles.js';
+import { ROLE_CONFIG } from './constants/roles.js';
 
 const SignUp = ({ onSignUp, onNavigate }) => {
   const [role, setRole] = useState(Role.FIRM);
