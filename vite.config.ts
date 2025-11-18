@@ -19,6 +19,12 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       }
+    },
+    build: {
+      rollupOptions: {
+        // Prevent Node built-ins from being bundled
+        external: ['path', 'fs']
+      }
     }
   };
 });
