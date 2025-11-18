@@ -11,7 +11,6 @@ interface SignUpProps {
 
 const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
   const [role, setRole] = useState<Role>(initialRole || Role.FIRM);
-
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -22,7 +21,6 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
     aadhar: '',
     adminCode: '',
   });
-
   const [error, setError] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,7 +38,6 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match.');
       return;
@@ -73,7 +70,15 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
     }
   };
 
-  const config = ROLE_CONFIG[role] || { name: 'User', hex: '#000000' };
+  // Role-based button color
+  const getRoleButtonColor = () => {
+    switch (role) {
+      case Role.FIRM: return 'btn-firm';
+      case Role.STUDENT: return 'btn-student';
+      case Role.ADMIN: return 'btn-admin';
+      default: return '';
+    }
+  };
 
   return (
     <div className="page-center">
@@ -82,7 +87,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
         <div className="form-group">
           <label>I am a...</label>
-          <select value={role} onChange={handleRoleChange}>
+          <select value={role} onChange={handleRoleChange} className="form-input">
             <option value="FIRM">Firm</option>
             <option value="STUDENT">Student</option>
             <option value="ADMIN">Admin</option>
@@ -91,52 +96,57 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
         <div className="form-group">
           <label>{role === Role.FIRM ? 'Firm Name' : 'Full Name'}</label>
-          <input name="name" type="text" required onChange={handleInputChange} />
+          <input name="name" type="text" required onChange={handleInputChange} className="form-input" />
         </div>
 
         {(role === Role.FIRM || role === Role.ADMIN) && (
           <div className="form-group">
             <label>Location</label>
-            <input name="location" type="text" required onChange={handleInputChange} />
+            <input name="location" type="text" required onChange={handleInputChange} className="form-input" />
           </div>
         )}
 
         {role === Role.ADMIN && (
           <div className="form-group">
             <label>Admin Code</label>
-            <input name="adminCode" type="text" required onChange={handleInputChange} />
+            <input name="adminCode" type="text" required onChange={handleInputChange} className="form-input" />
           </div>
         )}
 
         {role === Role.STUDENT && (
           <div className="form-group">
             <label>Phone</label>
-            <input name="phone" type="tel" required onChange={handleInputChange} />
+            <input name="phone" type="tel" required onChange={handleInputChange} className="form-input" />
             <label>Aadhar</label>
-            <input name="aadhar" type="text" required onChange={handleInputChange} />
+            <input name="aadhar" type="text" required onChange={handleInputChange} className="form-input" />
           </div>
         )}
 
         <div className="form-group">
           <label>Email</label>
-          <input name="email" type="email" required onChange={handleInputChange} />
+          <input name="email" type="email" required onChange={handleInputChange} className="form-input" />
         </div>
 
         <div className="form-group">
           <label>Password</label>
-          <input name="password" type="password" required onChange={handleInputChange} />
+          <input name="password" type="password" required onChange={handleInputChange} className="form-input" />
         </div>
 
         <div className="form-group">
           <label>Confirm Password</label>
-          <input name="confirmPassword" type="password" required onChange={handleInputChange} />
+          <input name="confirmPassword" type="password" required onChange={handleInputChange} className="form-input" />
         </div>
 
         {error && <p className="form-error">{error}</p>}
 
+        {/* Buttons vertically stacked */}
         <div className="form-group">
-          <button type="submit">Sign Up as {config.name}</button>
-          <button type="button" onClick={() => onNavigate('welcome')}>Back</button>
+          <button type="submit" className={`btn ${getRoleButtonColor()}`} style={{ width: '100%' }}>
+            Sign Up as {ROLE_CONFIG[role].name}
+          </button>
+          <button type="button" onClick={() => onNavigate('welcome')} className="btn btn-secondary" style={{ width: '100%' }}>
+            Back to role selection
+          </button>
         </div>
       </form>
     </div>
