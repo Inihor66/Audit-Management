@@ -14,26 +14,27 @@ router.post("/send-email", async (req, res) => {
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,
-    secure: false, // false for port 587
+    secure: false,
     auth: {
-      user: process.env.EMAIL,      // your Gmail
-      pass: process.env.EMAIL_PASS, // your Gmail app password
+      user: process.env.EMAIL,
+      pass: process.env.EMAIL_PASS,
     },
   });
 
   try {
     const info = await transporter.sendMail({
-      from: process.env.EMAIL,
+      from: `"Audit Management" <${process.env.EMAIL}>`,
       to,
       subject: "Your Verification Code",
       text: `Your verification code is: ${code}`,
+      html: `<p>Your verification code is: <strong>${code}</strong></p>`, // Optional HTML
     });
 
-    console.log("Email sent: ", info.messageId);
+    console.log(`[EMAIL SENT] Message ID: ${info.messageId} to ${to}`);
     res.json({ success: true, message: `Email sent to ${to}` });
-  } catch (err) {
-    console.error("Send email error:", err);
-    res.status(500).json({ success: false, error: err.message });
+  } catch (err: any) {
+    console.error("[EMAIL ERROR]", err);
+    res.status(500).json({ success: false, error: err.message || "Failed to send email" });
   }
 });
 
