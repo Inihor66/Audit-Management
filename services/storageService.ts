@@ -1,3 +1,4 @@
+// storageService.ts
 import { User, Role } from './types';
 const USERS_KEY = 'audit_flow_users';
 
@@ -43,23 +44,26 @@ export const addUser = (newUser: any) => {
   return user;
 };
 
-// --- Email Verification state only (frontend-safe) ---
+// --- Email Verification (Frontend-Safe) ---
 export const generateEmailVerificationCode = (userId: string) => {
   const users = getUsers();
   const idx = users.findIndex(u => u.id === userId);
   if (idx === -1) throw new Error('User not found');
 
+  // Generate a 6-digit code
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
+  // Save code in user object
   users[idx].emailVerification = { code, expiresAt };
   users[idx].emailVerified = false;
   saveUsers(users);
 
-  // DO NOT SEND EMAIL HERE
+  // RETURN CODE ONLY (do NOT send email here)
   return code;
 };
 
+// --- Verify Email Code ---
 export const verifyEmailCode = (userId: string, code: string) => {
   const users = getUsers();
   const idx = users.findIndex(u => u.id === userId);
