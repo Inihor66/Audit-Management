@@ -1,23 +1,28 @@
-// sendEmailRouter.ts
-import express from "express";
+import express, { Request, Response } from "express";
 import nodemailer from "nodemailer";
 
 const router = express.Router();
 
-router.post("/send-email", async (req, res) => {
-  const { to, code } = req.body;
+interface EmailRequestBody {
+  to: string;
+  code: string;
+}
+
+router.post("/send-email", async (req: Request, res: Response) => {
+  const { to, code } = req.body as EmailRequestBody;
 
   if (!to || !code) {
-    return res.status(400).json({ error: "Missing parameters" });
+    return res.status(400).json({ error: "Missing parameters: 'to' and 'code' are required." });
   }
 
-  // Create SendGrid transporter
+  // SendGrid SMTP Transporter
   const transporter = nodemailer.createTransport({
     host: "smtp.sendgrid.net",
     port: 587,
+    secure: false,
     auth: {
-      user: "apikey",                     // must be literally "apikey"
-      pass: process.env.SENDGRID_API_KEY, // your SendGrid API key
+      user: "apikey", // MUST be exactly "apikey"
+      pass: process.env.SENDGRID_API_KEY,
     },
   });
 
@@ -31,10 +36,19 @@ router.post("/send-email", async (req, res) => {
     });
 
     console.log(`[SENDGRID EMAIL SENT] Message ID: ${info.messageId} to ${to}`);
-    res.json({ success: true, message: `Email sent to ${to}` });
-  } catch (err: any) {
-    console.error("[SENDGRID EMAIL ERROR]", err);
-    res.status(500).json({ success: false, error: err.message || "Failed to send email" });
+
+    return res.json({
+      success: true,
+      message: `Email sent successfully to ${to}`,
+    });
+
+  } catch (error: any) {
+    console.error("[SENDGRID EMAIL ERROR]", error);
+
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Failed to send email",
+    });
   }
 });
 
