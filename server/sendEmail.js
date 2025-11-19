@@ -10,8 +10,8 @@ router.post("/send-email", async (req, res) => {
       port: 587,
       secure: false,
       auth: {
-        user: aarohipurwar06@gmail.com,  // your Gmail
-        pass: ilkq enhb mdwg wqoh,   // App Password (NOT normal Gmail password)
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
