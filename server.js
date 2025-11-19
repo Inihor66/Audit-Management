@@ -12,7 +12,7 @@ app.use(express.json());
 // ----------------------------
 // Root endpoint
 // ----------------------------
-app.get("/", (_req: Request, res: Response) => {
+app.get("/", (_req, res) => {
   res.send("Email backend is running!");
 });
 
