@@ -1,6 +1,4 @@
 import { User, Role } from './types';
-import nodemailer from 'nodemailer';
-
 const USERS_KEY = 'audit_flow_users';
 
 // --- Local Storage Helpers ---
