@@ -14,21 +14,22 @@ router.post("/send-email", async (req, res) => {
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,
-    secure: false, // true for 465, false for other ports
+    secure: false, // false for port 587
     auth: {
-      user: process.env.EMAIL,       // Your Gmail
-      pass: process.env.EMAIL_PASS,  // App password
+      user: process.env.EMAIL,      // your Gmail
+      pass: process.env.EMAIL_PASS, // your Gmail app password
     },
   });
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: process.env.EMAIL,
       to,
       subject: "Your Verification Code",
       text: `Your verification code is: ${code}`,
     });
 
+    console.log("Email sent: ", info.messageId);
     res.json({ success: true, message: `Email sent to ${to}` });
   } catch (err) {
     console.error("Send email error:", err);
