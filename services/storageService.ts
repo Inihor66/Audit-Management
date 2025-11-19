@@ -1,5 +1,7 @@
 // storageService.ts
 import { User, Role } from './types';
+import { API_BASE_URL } from './config';
+
 const USERS_KEY = 'audit_flow_users';
 
 // --- Local Storage Helpers ---
@@ -44,22 +46,48 @@ export const addUser = (newUser: any) => {
   return user;
 };
 
-// --- Email Verification (Frontend-Safe) ---
-export const generateEmailVerificationCode = (userId: string) => {
+// --- Backend Email API Call ---
+export const sendVerificationEmail = async (to: string, code: string) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to,
+        code,
+        subject: 'Your Verification Code',
+        text: `Your verification code is: ${code}`,
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to send email');
+    return true;
+  } catch (err) {
+    console.error('Error sending verification email:', err);
+    return false;
+  }
+};
+
+// --- Generate Email Verification Code ---
+export const generateEmailVerificationCode = async (userId: string) => {
   const users = getUsers();
   const idx = users.findIndex(u => u.id === userId);
   if (idx === -1) throw new Error('User not found');
 
-  // Generate a 6-digit code
+  // Generate 6-digit code
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-  // Save code in user object
+  // Save code in local storage
   users[idx].emailVerification = { code, expiresAt };
   users[idx].emailVerified = false;
   saveUsers(users);
 
-  // RETURN CODE ONLY (do NOT send email here)
+  // ✅ Send code via backend
+  const success = await sendVerificationEmail(users[idx].email, code);
+  if (!success) throw new Error('Failed to send verification email');
+
   return code;
 };
 
