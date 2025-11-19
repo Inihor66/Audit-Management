@@ -43,16 +43,8 @@ export const addUser = (newUser: any) => {
   return user;
 };
 
-// --- Email Verification with real email ---
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'YOUR_EMAIL@gmail.com',        // ✅ Replace with your Gmail
-    pass: 'YOUR_APP_PASSWORD',           // ✅ Replace with App Password
-  },
-});
-
-export const generateEmailVerificationCode = async (userId: string) => {
+// --- Email Verification state only (frontend-safe) ---
+export const generateEmailVerificationCode = (userId: string) => {
   const users = getUsers();
   const idx = users.findIndex(u => u.id === userId);
   if (idx === -1) throw new Error('User not found');
@@ -64,21 +56,7 @@ export const generateEmailVerificationCode = async (userId: string) => {
   users[idx].emailVerified = false;
   saveUsers(users);
 
-  // Send actual email
-  const mailOptions = {
-    from: '"Audit Management App" <YOUR_EMAIL@gmail.com>',
-    to: users[idx].email,
-    subject: 'Your Verification Code',
-    text: `Your email verification code is: ${code}. It will expire in 15 minutes.`,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    console.info(`Verification code sent to ${users[idx].email}`);
-  } catch (err) {
-    console.error('Error sending verification email:', err);
-  }
-
+  // DO NOT SEND EMAIL HERE
   return code;
 };
 
