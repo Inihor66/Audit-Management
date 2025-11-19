@@ -1,133 +1,104 @@
-// storageService.ts
-import { User, Role } from "./types";
-import { API_BASE_URL } from "./config";
+// ---------- STORAGE KE KEYS ----------
+const USERS_KEY = "users";
+const FORMS_KEY = "forms";
+const ADMIN_NOTIFICATIONS_KEY = "admin_notifications";
+const EMAIL_CODES_KEY = "email_codes";
 
-const USERS_KEY = "audit_flow_users";
-
-// ----------------------
-// Local Storage Helpers
-// ----------------------
-function getItem(key: string, defaultValue: any) {
+// ---------- Helper Functions ----------
+const getData = (key: string) => {
   try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : defaultValue;
-  } catch (err) {
-    console.error(`Error reading from localStorage key "${key}"`, err);
-    return defaultValue;
-  }
-}
-
-function setItem(key: string, value: any) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (err) {
-    console.error(`Error writing to localStorage key "${key}"`, err);
-  }
-}
-
-// ----------------------
-// Users
-// ----------------------
-export const getUsers = () => getItem(USERS_KEY, []);
-export const saveUsers = (users: User[]) => setItem(USERS_KEY, users);
-
-export const addUser = (newUser: any) => {
-  const users = getUsers();
-
-  // check duplicate (same email + same role)
-  if (
-    users.some(
-      (u) =>
-        u.email.toLowerCase() === newUser.email.toLowerCase() &&
-        u.role === newUser.role
-    )
-  ) {
-    throw new Error("Account with this email already exists for this role.");
-  }
-
-  const user: User = {
-    ...newUser,
-    id: crypto.randomUUID(),
-    emailVerified: newUser.role === Role.STUDENT ? true : false,
-    emailVerification: null,
-
-    // required fields from type
-    subscription: null,
-    notifications: [],
-    pendingPaymentSS: null,
-  };
-
-  users.push(user);
-  saveUsers(users);
-
-  return user;
-};
-
-// ----------------------
-// Backend Email API Call
-// ----------------------
-export const sendVerificationEmail = async (to: string, code: string) => {
-  try {
-    const res = await fetch(`${API_BASE_URL}/send-email`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        to,
-        code,
-        subject: "Your Verification Code",
-        text: `Your verification code is: ${code}`,
-      }),
-    });
-
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || "Failed to send email");
-
-    return true;
-  } catch (err) {
-    console.error("Error sending verification email:", err);
-    return false;
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch {
+    return [];
   }
 };
 
-// ----------------------
-// Generate Verification Code
-// ----------------------
-export const generateEmailVerificationCode = async (userId: string) => {
-  const users = getUsers();
-  const idx = users.findIndex((u) => u.id === userId);
-  if (idx === -1) throw new Error("User not found");
-
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-
-  // save in localStorage
-  users[idx].emailVerification = { code, expiresAt };
-  users[idx].emailVerified = false;
-  saveUsers(users);
-
-  // send email via backend → SendGrid
-  const success = await sendVerificationEmail(users[idx].email, code);
-  if (!success) throw new Error("Failed to send verification email");
-
-  return code;
+const setData = (key: string, value: any) => {
+  localStorage.setItem(key, JSON.stringify(value));
 };
 
-// ----------------------
-// Verify Code
-// ----------------------
-export const verifyEmailCode = (userId: string, code: string) => {
-  const users = getUsers();
-  const idx = users.findIndex((u) => u.id === userId);
-  if (idx === -1) throw new Error("User not found");
+// ---------- USERS ----------
+export const getUserById = (id: string) => {
+  const users = getData(USERS_KEY);
+  return users.find((u: any) => u.id === id) || null;
+};
 
-  const v = users[idx].emailVerification;
-  if (!v) return false;
-  if (v.code !== code) return false;
-  if (new Date() > new Date(v.expiresAt)) return false;
+export const updateUser = (updatedUser: any) => {
+  const users = getData(USERS_KEY);
+  const index = users.findIndex((u: any) => u.id === updatedUser.id);
 
-  users[idx].emailVerified = true;
-  users[idx].emailVerification = null;
-  saveUsers(users);
+  if (index !== -1) {
+    users[index] = updatedUser;
+    setData(USERS_KEY, users);
+  }
+};
 
-  return true;
+// ---------- FORMS ----------
+export const getForms = () => {
+  return getData(FORMS_KEY);
+};
+
+export const addForm = (form: any) => {
+  const forms = getData(FORMS_KEY);
+  forms.push(form);
+  setData(FORMS_KEY, forms);
+};
+
+export const updateForm = (updatedForm: any) => {
+  const forms = getData(FORMS_KEY);
+  const index = forms.findIndex((f: any) => f.id === updatedForm.id);
+
+  if (index !== -1) {
+    forms[index] = updatedForm;
+    setData(FORMS_KEY, forms);
+  }
+};
+
+// ---------- ADMIN NOTIFICATIONS ----------
+export const getAdminNotifications = () => {
+  return getData(ADMIN_NOTIFICATIONS_KEY);
+};
+
+export const addAdminNotification = (notification: any) => {
+  const list = getData(ADMIN_NOTIFICATIONS_KEY);
+  list.push(notification);
+  setData(ADMIN_NOTIFICATIONS_KEY, list);
+};
+
+export const updateAdminNotification = (updated: any) => {
+  const list = getData(ADMIN_NOTIFICATIONS_KEY);
+  const index = list.findIndex((n: any) => n.id === updated.id);
+
+  if (index !== -1) {
+    list[index] = updated;
+    setData(ADMIN_NOTIFICATIONS_KEY, list);
+  }
+};
+
+// ---------- EMAIL VERIFICATION ----------
+export const resendEmailVerificationCode = (userId: string) => {
+  const codes = getData(EMAIL_CODES_KEY);
+
+  const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+  const index = codes.findIndex((c: any) => c.userId === userId);
+
+  if (index !== -1) {
+    codes[index].code = newCode;
+  } else {
+    codes.push({ userId, code: newCode });
+  }
+
+  setData(EMAIL_CODES_KEY, codes);
+
+  console.log("Fake email sent with code:", newCode);
+  return newCode;
+};
+
+// ---------- CLEAR ----------
+export const clearAllData = () => {
+  localStorage.removeItem(USERS_KEY);
+  localStorage.removeItem(FORMS_KEY);
+  localStorage.removeItem(ADMIN_NOTIFICATIONS_KEY);
+  localStorage.removeItem(EMAIL_CODES_KEY);
 };
