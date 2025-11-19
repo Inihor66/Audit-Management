@@ -1,14 +1,15 @@
 import express from "express";
 import cors from "cors";
 import sgMail from "@sendgrid/mail";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
-
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// IMPORTANT → Check Env Vars
+// Check Env Vars
 if (!process.env.SENDGRID_API_KEY) {
   console.error("❌ Missing SENDGRID_API_KEY");
 }
@@ -16,38 +17,39 @@ if (!process.env.EMAIL_FROM) {
   console.error("❌ Missing EMAIL_FROM");
 }
 
-// Set SendGrid Key
+// Set SendGrid API Key
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// ROUTE → Send OTP
-app.post("/send-otp", async (req, res) => {
-  try {
-    const { email } = req.body;
+// Default route
+app.get("/", (req, res) => {
+  res.send("SendGrid Email Backend is running!");
+});
 
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+// MAIN ROUTE → Send OTP
+app.post("/send-email", async (req, res) => {
+  try {
+    const { to, code, subject, text } = req.body;
+
+    if (!to || !code) {
+      return res.status(400).json({ success: false, error: "Missing email or code" });
     }
 
-    // OTP Generate
-    const otp = Math.floor(100000 + Math.random() * 900000);
-
     const msg = {
-      to: email,
-      from: process.env.EMAIL_FROM, // must match SendGrid verified email
-      subject: "Your Verification OTP",
+      to,
+      from: process.env.EMAIL_FROM, // VERIFIED SENDGRID SENDER
+      subject: subject || "Your Verification Code",
       html: `
         <p>Your verification code is:</p>
-        <h1>${otp}</h1>
+        <h1 style="font-size:32px; letter-spacing:4px;">${code}</h1>
         <p>This code will expire in 10 minutes.</p>
-      `
+      `,
     };
 
     await sgMail.send(msg);
 
     return res.status(200).json({
       success: true,
-      message: "OTP sent successfully",
-      otp,
+      message: "Verification email sent!",
     });
 
   } catch (err) {
@@ -56,28 +58,11 @@ app.post("/send-otp", async (req, res) => {
     return res.status(500).json({
       success: false,
       error: err.message,
-      details: err.response?.body?.errors || null,
+      details: err.response?.body?.errors || null
     });
   }
 });
 
-// SERVER START
+// Server Start
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
-
-<button
-    type="submit"
-    className={`signup-btn ${
-        role === Role.FIRM ? 'firm' : role === Role.STUDENT ? 'student' : 'admin'
-    }`}
->
-    Sign Up
-</button>
-
-<button
-    type="button"
-    className="back-btn"
-    onClick={() => onNavigate('welcome')}
->
-    Back
-</button>
