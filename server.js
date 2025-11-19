@@ -18,23 +18,33 @@ app.post("/api/send-email", async (req, res) => {
   try {
     const { to, subject, text } = req.body;
 
+    // Gmail SMTP (requires App Password)
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER, // your Gmail
+        pass: process.env.EMAIL_PASS, // your Gmail App Password
       },
     });
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    // Verify SMTP connection (debug)
+    await transporter.verify();
+    console.log("SMTP Verified ✅");
+
+    const info = await transporter.sendMail({
+      from: `"Audit App" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text,
     });
 
+    console.log("Email sent:", info.messageId);
+
     res.json({ success: true, message: "Email sent successfully!" });
   } catch (err) {
+    console.error("Email error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -42,4 +52,6 @@ app.post("/api/send-email", async (req, res) => {
 // Render will use PORT from environment
 const PORT = process.env.PORT || 10000;
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Server running on port ${PORT}`)
+);
