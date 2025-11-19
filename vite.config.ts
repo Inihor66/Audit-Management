@@ -23,8 +23,15 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       rollupOptions: {
-        // Prevent Node-only modules from being bundled in frontend
-        external: ['path', 'fs', 'os', 'net', 'crypto'],
+        // Prevent Node-only modules (including nodemailer) from being bundled
+        external: [
+          'nodemailer',
+          'path',
+          'fs',
+          'os',
+          'net',
+          'crypto'
+        ],
       },
     },
   };
