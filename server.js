@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import cors from "cors";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
@@ -19,7 +19,7 @@ app.get("/", (_req, res) => {
 // ----------------------------
 // POST → Send Email
 // ----------------------------
-app.post("/api/send-email", async (req: Request, res: Response) => {
+app.post("/api/send-email", async (req, res) => {
   try {
     const { to, subject, text } = req.body;
 
@@ -41,11 +41,9 @@ app.post("/api/send-email", async (req: Request, res: Response) => {
       },
     });
 
-    // Verify SMTP connection
     await transporter.verify();
     console.log("SMTP Verified ✅");
 
-    // Sending email
     const info = await transporter.sendMail({
       from: `"Audit App" <${process.env.EMAIL_USER}>`,
       to,
@@ -60,7 +58,7 @@ app.post("/api/send-email", async (req: Request, res: Response) => {
       message: "Email sent successfully!",
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Email Error:", error);
     return res.status(500).json({
       success: false,
