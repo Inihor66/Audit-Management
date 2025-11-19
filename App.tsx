@@ -16,10 +16,32 @@ const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
 const ConfirmSubscription = React.lazy(() => import('./pages/ConfirmSubscription'));
 const DevReset = React.lazy(() => import('./pages/DevReset'));
 
-// Loader fallback
+// Loader
 const Loader = () => <div className="page-center"><p>Loading...</p></div>;
 
-// Role button component
+// ⭐ EMAIL SEND FUNCTION — DIRECTLY ADDED HERE
+const sendTestEmail = async () => {
+    try {
+        const res = await fetch("/api/send-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                to: "test@gmail.com",
+                subject: "Hello",
+                text: "Email from audit app",
+            }),
+        });
+
+        const data = await res.json();
+        console.log("Email sent:", data);
+        alert("Email sent! Check console.");
+    } catch (err) {
+        console.error("Email failed:", err);
+        alert("Failed to send email");
+    }
+};
+
+// Role Button
 const RoleButton = ({ role = Role.FIRM, icon, onClick }: { role?: Role, icon: React.ReactNode, onClick: () => void }) => {
     const config = ROLE_CONFIG[role] ?? { hex: "#000000", name: "Unknown" };
     const roleColorStyle = { backgroundColor: config.hex };
@@ -35,18 +57,27 @@ const RoleButton = ({ role = Role.FIRM, icon, onClick }: { role?: Role, icon: Re
     );
 };
 
-// Welcome Page
+// Welcome Page + ⭐ EMAIL TEST BUTTON ADDED
 const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, role?: Role) => void }) => (
     <div className="page-center welcome-page">
         <div className="text-center">
             <h1>Welcome</h1>
             <p>Choose your role to get started</p>
         </div>
+
         <div className="roles-container">
             <RoleButton role={Role.FIRM} icon={<BriefcaseIcon />} onClick={() => onNavigate('login', Role.FIRM)} />
             <RoleButton role={Role.STUDENT} icon={<GraduationCapIcon />} onClick={() => onNavigate('login', Role.STUDENT)} />
             <RoleButton role={Role.ADMIN} icon={<ShieldCheckIcon />} onClick={() => onNavigate('login', Role.ADMIN)} />
         </div>
+
+        {/* ⭐ TEST EMAIL BUTTON */}
+        <button 
+            style={{ marginTop: "20px", padding: "10px 20px", background: "purple", color: "white" }}
+            onClick={sendTestEmail}
+        >
+            Send Test Email
+        </button>
     </div>
 );
 
@@ -92,9 +123,9 @@ export default function App() {
     }, []);
 
     const refreshUser = useCallback(() => {
-        if(currentUser) {
+        if (currentUser) {
             const freshUser = storage.getUserById(currentUser.id);
-            if(freshUser) setCurrentUser(freshUser);
+            if (freshUser) setCurrentUser(freshUser);
         }
     }, [currentUser]);
 
