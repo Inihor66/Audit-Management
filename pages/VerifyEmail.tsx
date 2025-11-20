@@ -1,3 +1,4 @@
+// components/VerifyEmail.tsx  (or pages/VerifyEmail.tsx — place where your project expects it)
 import React, { useState, useEffect } from 'react';
 import * as storage from '../services/storageService';
 import { Role, User } from '../types';
@@ -13,7 +14,8 @@ const VerifyEmail = ({ onVerified, onNavigate }: VerifyEmailProps) => {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
+  const [loadingResend, setLoadingResend] = useState(false);
 
   const getRoleFromSession = (): Role | undefined => {
     const roleStr = sessionStorage.getItem('pendingVerificationRole');
@@ -57,14 +59,18 @@ const VerifyEmail = ({ onVerified, onNavigate }: VerifyEmailProps) => {
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setError('');
     if (!pendingUserId) return setError('No pending verification user.');
+    setLoadingResend(true);
     try {
-      storage.resendEmailVerificationCode(pendingUserId);
+      const ok = await storage.resendEmailVerificationCode(pendingUserId);
+      if (!ok) throw new Error('Failed to send verification email. Try again later.');
       setInfo('Verification code resent to your email.');
     } catch (err: any) {
       setError(err.message || 'Resend failed.');
+    } finally {
+      setLoadingResend(false);
     }
   };
 
@@ -88,7 +94,9 @@ const VerifyEmail = ({ onVerified, onNavigate }: VerifyEmailProps) => {
           <input className="form-input" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Enter 6-digit code" />
           {error && <p className="form-error">{error}</p>}
 
-          <button onClick={handleResend} className="btn btn-secondary" style={{ width: '100%', marginTop: '0.5rem' }}>Resend Code</button>
+          <button onClick={handleResend} className="btn btn-secondary" style={{ width: '100%', marginTop: '0.5rem' }} disabled={loadingResend}>
+            {loadingResend ? 'Resending...' : 'Resend Code'}
+          </button>
           <button onClick={handleVerify} className="btn btn-firm" style={{ width: '100%', marginTop: '0.5rem' }}>Verify & Continue</button>
         </div>
 
