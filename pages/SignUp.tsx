@@ -1,3 +1,4 @@
+// pages/SignUp.tsx
 import React, { useState } from 'react';
 import { Role } from '../types';
 import * as storage from '../services/storageService';
@@ -10,7 +11,6 @@ interface SignUpProps {
 }
 
 const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
-  // Default role set karo agar initialRole undefined ho
   const [role, setRole] = useState<Role>(initialRole || Role.FIRM);
 
   const [formData, setFormData] = useState({
@@ -25,6 +25,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
   });
 
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Input change handle
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +42,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
   };
 
   // Submit handle
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -50,6 +51,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
       return;
     }
 
+    setLoading(true);
     try {
       const newUserPayload: any = {
         role,
@@ -63,17 +65,27 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
       const newUser = storage.addUser(newUserPayload);
 
+      // For FIRM and ADMIN we require email verification
       if (role === Role.FIRM || role === Role.ADMIN) {
-        storage.generateEmailVerificationCode(newUser.id);
+        const ok = await storage.generateEmailVerificationCode(newUser.id);
+        if (!ok) {
+          setError('Failed to send verification email. Please try again later.');
+          setLoading(false);
+          return;
+        }
         sessionStorage.setItem('pendingVerificationUserId', newUser.id);
         sessionStorage.setItem('pendingVerificationRole', role.toString());
         onNavigate('verify');
+        setLoading(false);
         return;
       }
 
+      // STUDENT flow: no verification required
       onSignUp(newUser);
+      setLoading(false);
     } catch (err: any) {
       setError(err?.message || 'An unknown error occurred.');
+      setLoading(false);
     }
   };
 
@@ -150,8 +162,8 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
         {error && <p className="form-error">{error}</p>}
 
         <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <button type="submit" className={`btn ${getButtonClass()}`}>
-            Sign Up as {config.name}
+          <button type="submit" className={`btn ${getButtonClass()}`} disabled={loading}>
+            {loading ? 'Creating account...' : `Sign Up as ${config.name}`}
           </button>
           <button type="button" onClick={() => onNavigate('welcome')} className="btn btn-primary">
             Back to role selection
