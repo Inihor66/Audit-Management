@@ -1,11 +1,47 @@
-// services/storageService.ts (only the OTP parts shown)
-// make sure API_BASE_URL in config.ts points to your backend base, e.g. "http://localhost:4000/api" or "" for Vercel origin
+// services/storageService.ts
 
 import { API_BASE_URL } from "./config";
 
+// ---------- Local Storage Setup ----------
+
+const USERS_KEY = "audit_users";
+const CURRENT_USER_KEY = "current_user";
 const EMAIL_OTP_KEY = "email_otp";
 
-// call this after creating new user
+// ---------- User Helpers ----------
+
+export function getUsers() {
+  return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+}
+
+export function getUserById(id: string) {
+  return getUsers().find((u: any) => u.id === id);
+}
+
+export function updateUser(updatedUser: any) {
+  const users = getUsers().map((u: any) =>
+    u.id === updatedUser.id ? updatedUser : u
+  );
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+export function saveUser(user: any) {
+  const users = getUsers();
+  users.push(user);
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+export function setCurrentUser(id: string) {
+  localStorage.setItem(CURRENT_USER_KEY, id);
+}
+
+export function getCurrentUser() {
+  const id = localStorage.getItem(CURRENT_USER_KEY);
+  return id ? getUserById(id) : null;
+}
+
+// ---------- OTP GENERATION & EMAIL SEND ----------
+
 export async function generateEmailVerificationCode(userId: string) {
   const user = getUserById(userId);
   if (!user) throw new Error("User not found");
@@ -13,19 +49,25 @@ export async function generateEmailVerificationCode(userId: string) {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-  // save locally for verify page
-  localStorage.setItem(EMAIL_OTP_KEY, JSON.stringify({ userId, otp, expiresAt }));
+  // Save OTP locally (for verify page)
+  localStorage.setItem(
+    EMAIL_OTP_KEY,
+    JSON.stringify({ userId, otp, expiresAt })
+  );
 
   try {
-    // NOTE: API_BASE_URL should include '/api' if backend expects it, e.g. "http://localhost:4000/api"
+    // POST request → backend → SendGrid → email send
     const resp = await fetch(`${API_BASE_URL}/send-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: user.email, code: otp }),
+      body: JSON.stringify({
+        email: user.email,
+        code: otp,
+      }),
     });
 
     if (!resp.ok) {
-      console.error("OTP backend responded with error", await resp.text());
+      console.error("OTP backend error:", await resp.text());
       return false;
     }
 
@@ -36,17 +78,24 @@ export async function generateEmailVerificationCode(userId: string) {
   }
 }
 
+// ---------- OTP VERIFY ----------
+
 export function verifyEmailCode(userId: string, enteredOtp: string) {
   const stored = JSON.parse(localStorage.getItem(EMAIL_OTP_KEY) || "null");
+
   if (!stored) return false;
   if (stored.userId !== userId) return false;
   if (stored.otp !== enteredOtp) return false;
-  if (stored.expiresAt < Date.now()) return false;
+  if (stored.expiresAt < Date.now()) return false; // expired
 
+  // OTP success → remove OTP → mark user verified
   localStorage.removeItem(EMAIL_OTP_KEY);
+
   const user = getUserById(userId);
   if (!user) return false;
+
   user.emailVerified = true;
   updateUser(user);
+
   return true;
 }
