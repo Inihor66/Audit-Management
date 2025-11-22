@@ -31,7 +31,7 @@ export const CONTACT_INFO = {
 };
 
 // Frontend single-page deployment URL used for API base determination
-export const API_BASE_URL = '';
+export const API_BASE_URL = "https://audit-management-wgbd.onrender.com";
 
 export const plans = {
   basic: {
