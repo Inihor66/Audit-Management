@@ -16,6 +16,8 @@ export const ROLE_CONFIG = {
     freeEntries: 550,
   },
 };
+
+// ✅ Only ONE API_BASE_URL
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   "https://audit-management-2.onrender.com/api";
@@ -33,9 +35,6 @@ export const CONTACT_INFO = {
   email: 'aarohipurwar06@gmail.com',
 };
 
-// Frontend single-page deployment URL used for API base determination
-export const API_BASE_URL = "https://audit-management-wgbd.onrender.com";
-
 export const plans = {
   basic: {
     name: "Basic",
@@ -50,4 +49,3 @@ export const plans = {
     freeEntries: 200,
   }
 };
-
