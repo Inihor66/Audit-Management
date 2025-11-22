@@ -93,6 +93,7 @@ const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole 
     <div className="page-center">
       <form onSubmit={handleSubmit} className="auth-form-card">
         <h2>Create your account</h2>
+
         <div className="form-group">
           <label>I am a...</label>
           <select value={Role[role]} onChange={handleRoleChange} className="form-select">
@@ -101,6 +102,7 @@ const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole 
             <option value="ADMIN">Admin</option>
           </select>
         </div>
+
         <div className="form-group">
           <label>{role === Role.FIRM ? "Firm Name" : "Full Name"}</label>
           <input name="name" type="text" required className="form-input" onChange={handleInputChange} />
@@ -126,6 +128,7 @@ const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole 
               <label>Phone</label>
               <input name="phone" type="tel" required className="form-input" onChange={handleInputChange} />
             </div>
+
             <div className="form-group">
               <label>Aadhar</label>
               <input name="aadhar" type="text" required className="form-input" onChange={handleInputChange} />
@@ -137,10 +140,12 @@ const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole 
           <label>Email</label>
           <input name="email" type="email" required className="form-input" onChange={handleInputChange} />
         </div>
+
         <div className="form-group">
           <label>Password</label>
           <input name="password" type="password" required className="form-input" onChange={handleInputChange} />
         </div>
+
         <div className="form-group">
           <label>Confirm Password</label>
           <input name="confirmPassword" type="password" required className="form-input" onChange={handleInputChange} />
