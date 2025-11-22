@@ -94,3 +94,20 @@ export function verifyEmailCode(userId: string, enteredOtp: string) {
 
   return true;
 }
+// ---------------- LOGIN ----------------
+
+// Get user by email
+export function getUserByEmail(email: string) {
+  return getUsers().find((u: any) => u.email === email);
+}
+
+// Login user
+export function loginUser(email: string, password: string) {
+  const user = getUserByEmail(email);
+
+  if (!user) return null;
+  if (user.passwordHash !== password) return null;
+
+  setCurrentUser(user.id);
+  return user;
+}
