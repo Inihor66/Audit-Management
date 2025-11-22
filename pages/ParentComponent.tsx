@@ -10,26 +10,21 @@ const ParentComponent = () => {
   const [role, setRole] = useState<Role | undefined>(undefined);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Navigate function to pass to children
   const handleNavigate = (page: Page, selectedRole?: Role) => {
     setCurrentPage(page);
     if (selectedRole) setRole(selectedRole);
   };
 
-  // Handle login
   const handleLogin = (user: User) => {
-    console.log("User logged in:", user);
     setCurrentUser(user);
-    setCurrentPage("dashboard"); // navigate to dashboard after login
     sessionStorage.setItem("currentUser", JSON.stringify(user));
+    setCurrentPage("dashboard");
   };
 
-  // Handle signup
   const handleSignUp = (user: User) => {
-    console.log("User signed up:", user);
     setCurrentUser(user);
-    setCurrentPage("dashboard"); // navigate to dashboard after signup
     sessionStorage.setItem("currentUser", JSON.stringify(user));
+    setCurrentPage("dashboard");
   };
 
   return (
@@ -44,33 +39,21 @@ const ParentComponent = () => {
       )}
 
       {currentPage === "login" && role && (
-        <Login
-          role={role}
-          onLogin={handleLogin}
-          onNavigate={handleNavigate}
-        />
+        <Login role={role} onLogin={handleLogin} onNavigate={handleNavigate} />
       )}
 
       {currentPage === "signup" && role && (
-        <SignUp
-          role={role}
-          onSignUp={handleSignUp}
-          onNavigate={handleNavigate}
-        />
+        <SignUp role={role} onSignUp={handleSignUp} onNavigate={handleNavigate} />
       )}
 
       {currentPage === "dashboard" && currentUser && (
         <div className="dashboard-page">
           <h2>Welcome, {currentUser.name}!</h2>
-          <button
-            onClick={() => {
-              setCurrentUser(null);
-              setCurrentPage("welcome");
-              sessionStorage.removeItem("currentUser");
-            }}
-          >
-            Logout
-          </button>
+          <button onClick={() => {
+            setCurrentUser(null);
+            setCurrentPage("welcome");
+            sessionStorage.removeItem("currentUser");
+          }}>Logout</button>
         </div>
       )}
 
