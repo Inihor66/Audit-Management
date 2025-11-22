@@ -34,7 +34,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value as keyof typeof Role;
-    setRole(Role[value]); 
+    setRole(Role[value]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,9 +64,9 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
       const newUser = storage.addUser(newUserPayload);
 
-      // Send verification email only for FIRM or ADMIN
+      // ---------- EMAIL VERIFICATION FOR ADMIN & FIRM ----------
       if (role === Role.FIRM || role === Role.ADMIN) {
-        const verification = storage.createEmailVerificationRecord(newUser.id);
+        const verification = await storage.generateEmailVerificationCode(newUser.id);
 
         const res = await fetch(`${API_BASE_URL}/email/send-verification`, {
           method: "POST",
@@ -93,6 +93,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
         return;
       }
 
+      // STUDENT: no email verification
       onSignUp(newUser);
       setLoading(false);
     } catch (err: any) {
