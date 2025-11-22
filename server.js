@@ -1,3 +1,4 @@
+// backend/server.js
 import express from "express";
 import cors from "cors";
 import nodemailer from "nodemailer";
@@ -18,7 +19,7 @@ app.get("/", (_req, res) => {
 });
 
 // ----------------------------
-// Gmail Email Route (Normal Email)
+// GMAIL SMTP Normal Email Route
 // ----------------------------
 app.post("/api/send-email", async (req, res) => {
   try {
@@ -27,66 +28,54 @@ app.post("/api/send-email", async (req, res) => {
     if (!to || !subject || !text) {
       return res.status(400).json({
         success: false,
-        message: "Missing 'to', 'subject', or 'text' field.",
+        message: "Missing 'to', 'subject', or 'text'.",
       });
     }
 
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
     });
 
-    await transporter.verify();
-    console.log("SMTP Verified ✅");
-
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: `"Audit App" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text,
     });
 
-    console.log("Email sent:", info.messageId);
+    return res.json({ success: true, message: "Email sent successfully!" });
 
-    return res.json({
-      success: true,
-      message: "Email sent successfully!",
-    });
-
-  } catch (error) {
-    console.error("Email Error:", error);
+  } catch (err) {
     return res.status(500).json({
       success: false,
-      message: "Failed to send email.",
-      error: error.message,
+      message: "Failed to send email",
+      error: err.message,
     });
   }
 });
 
 // ----------------------------
-// SENDGRID OTP ROUTE
+// SENDGRID OTP Route
 // ----------------------------
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 app.post("/api/send-otp", async (req, res) => {
-  const { email } = req.body;
+  const { email, otp } = req.body;
 
-  if (!email) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Email is required" });
+  if (!email || !otp) {
+    return res.status(400).json({
+      success: false,
+      error: "email & otp required",
+    });
   }
-
-  const otp = Math.floor(100000 + Math.random() * 900000);
 
   const msg = {
     to: email,
-    from: process.env.EMAIL_FROM,
+    from: process.env.SENDGRID_FROM,
     subject: "Your Verification Code",
     html: `
       <p>Your verification code is:</p>
@@ -97,18 +86,11 @@ app.post("/api/send-otp", async (req, res) => {
 
   try {
     await sgMail.send(msg);
-
-    res.status(200).json({
-      success: true,
-      message: "OTP sent successfully!",
-      otp, // remove later
-    });
+    res.status(200).json({ success: true, message: "OTP sent!" });
   } catch (error) {
-    console.error("SendGrid Error:", error);
-
     res.status(500).json({
       success: false,
-      error: error.message || "Error sending email",
+      error: error.message || "SendGrid Error",
     });
   }
 });
@@ -116,7 +98,7 @@ app.post("/api/send-otp", async (req, res) => {
 // ----------------------------
 // Start Server
 // ----------------------------
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Backend running on port ${PORT}`);
 });
