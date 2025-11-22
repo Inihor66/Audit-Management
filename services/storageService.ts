@@ -1,13 +1,13 @@
 // services/storageService.ts
-// Updated: real email sending via backend + local storage user management + verify logic
+// Updated: OTP via backend + Local Storage user management
 
-import { API_BASE_URL } from './config';
+import { API_BASE_URL } from "./config";
 
 // ---------- STORAGE KEYS ----------
 const USERS_KEY = "users";
 const FORMS_KEY = "forms";
 const ADMIN_NOTIFICATIONS_KEY = "admin_notifications";
-const EMAIL_CODES_KEY = "email_codes";
+const EMAIL_OTP_KEY = "email_otp";
 
 // ---------- Helper Functions ----------
 const getData = (key: string) => {
@@ -30,25 +30,27 @@ export const getUserById = (id: string) => {
 
 export const addUser = (user: any) => {
   const users = getData(USERS_KEY);
-  // create id + default fields
-  const id = `u_${Date.now()}_${Math.floor(Math.random()*9000)}`;
+
+  const id = `u_${Date.now()}_${Math.floor(Math.random() * 9000)}`;
+
   const newUser = {
     id,
-    name: user.name || '',
-    email: user.email || '',
-    phone: user.phone || '',
-    role: user.role || 'firm',
+    name: user.name || "",
+    email: user.email || "",
+    phone: user.phone || "",
+    role: user.role || "firm",
     adminCode: user.adminCode || null,
     emailVerified: false,
-    emailVerification: null,
     subscription: null,
     notifications: [],
     pendingPaymentSS: null,
     createdAt: new Date().toISOString(),
-    ...user
+    ...user,
   };
+
   users.push(newUser);
   setData(USERS_KEY, users);
+
   return newUser;
 };
 
@@ -66,14 +68,17 @@ export const updateUser = (updatedUser: any) => {
 
 // ---------- FORMS ----------
 export const getForms = () => getData(FORMS_KEY);
+
 export const addForm = (form: any) => {
   const forms = getData(FORMS_KEY);
   forms.push(form);
   setData(FORMS_KEY, forms);
 };
+
 export const updateForm = (updatedForm: any) => {
   const forms = getData(FORMS_KEY);
   const index = forms.findIndex((f: any) => f.id === updatedForm.id);
+
   if (index !== -1) {
     forms[index] = updatedForm;
     setData(FORMS_KEY, forms);
@@ -82,136 +87,89 @@ export const updateForm = (updatedForm: any) => {
 
 // ---------- ADMIN NOTIFICATIONS ----------
 export const getAdminNotifications = () => getData(ADMIN_NOTIFICATIONS_KEY);
+
 export const addAdminNotification = (notification: any) => {
   const list = getData(ADMIN_NOTIFICATIONS_KEY);
   list.push(notification);
   setData(ADMIN_NOTIFICATIONS_KEY, list);
 };
+
 export const updateAdminNotification = (updated: any) => {
   const list = getData(ADMIN_NOTIFICATIONS_KEY);
   const index = list.findIndex((n: any) => n.id === updated.id);
+
   if (index !== -1) {
     list[index] = updated;
     setData(ADMIN_NOTIFICATIONS_KEY, list);
   }
 };
 
-// ---------- EMAIL VERIFICATION (REAL BACKEND) ----------
+// ------------------------------------
+// OTP EMAIL via BACKEND (SendGrid)
+// ------------------------------------
 
 /**
  * generateEmailVerificationCode
- * - creates a 6-digit code, stores locally (so Verify page can validate)
- * - calls backend endpoint to send the email
- * - returns boolean success
+ * - Creates OTP
+ * - Saves to localStorage
+ * - Sends OTP through backend (/api/send-otp)
  */
 export async function generateEmailVerificationCode(userId: string) {
   const user = getUserById(userId);
-  if (!user) throw new Error('User not found');
+  if (!user) throw new Error("User not found");
 
-  const codes = getData(EMAIL_CODES_KEY) as any[];
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-  // store local copy
-  const index = codes.findIndex(c => c.userId === userId);
-  if (index !== -1) {
-    codes[index] = { userId, code, expiresAt };
-  } else {
-    codes.push({ userId, code, expiresAt });
-  }
-  setData(EMAIL_CODES_KEY, codes);
+  // save locally for verification
+  localStorage.setItem(
+    EMAIL_OTP_KEY,
+    JSON.stringify({
+      userId,
+      otp,
+      expiresAt,
+    })
+  );
 
-  // call backend to send actual email
   try {
-    const resp = await fetch(`${API_BASE_URL}/email/send-verification`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId,
-        email: user.email,
-        code,
-        expiresAt
-      })
+    const resp = await fetch(`${API_BASE_URL}/send-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email, otp }),
     });
-    const data = await resp.json();
+
     if (!resp.ok) {
-      console.error('Backend email API returned error:', data);
+      console.error("OTP backend error");
       return false;
     }
+
     return true;
   } catch (err) {
-    console.error('Failed to call backend email API:', err);
-    return false;
-  }
-}
-
-/**
- * resendEmailVerificationCode
- * - generates a fresh code, stores locally, calls backend
- */
-export async function resendEmailVerificationCode(userId: string) {
-  const user = getUserById(userId);
-  if (!user) throw new Error('User not found');
-
-  const codes = getData(EMAIL_CODES_KEY) as any[];
-  const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = Date.now() + 10 * 60 * 1000;
-
-  const index = codes.findIndex((c: any) => c.userId === userId);
-  if (index !== -1) {
-    codes[index].code = newCode;
-    codes[index].expiresAt = expiresAt;
-  } else {
-    codes.push({ userId, code: newCode, expiresAt });
-  }
-  setData(EMAIL_CODES_KEY, codes);
-
-  // call backend
-  try {
-    const resp = await fetch(`${API_BASE_URL}/email/send-verification`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId,
-        email: user.email,
-        code: newCode,
-        expiresAt
-      })
-    });
-    const data = await resp.json();
-    if (!resp.ok) {
-      console.error('Backend email API returned error (resend):', data);
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.error('Failed to call backend email API (resend):', err);
+    console.error("Failed to send OTP:", err);
     return false;
   }
 }
 
 /**
  * verifyEmailCode
- * - checks local stored code + expiry
- * - marks user.emailVerified = true and removes the code
+ * - Checks OTP with stored data
  */
-export function verifyEmailCode(userId: string, code: string) {
-  const codes = getData(EMAIL_CODES_KEY) as any[];
-  const entry = codes.find((c: any) => c.userId === userId);
-  if (!entry) return false;
-  if (entry.code !== code) return false;
-  if (entry.expiresAt < Date.now()) return false;
+export function verifyEmailCode(userId: string, enteredOtp: string) {
+  const stored = JSON.parse(localStorage.getItem(EMAIL_OTP_KEY) || "null");
 
-  // remove the code
-  const newCodes = codes.filter((c: any) => c.userId !== userId);
-  setData(EMAIL_CODES_KEY, newCodes);
+  if (!stored) return false;
+  if (stored.userId !== userId) return false;
+  if (stored.otp !== enteredOtp) return false;
+  if (stored.expiresAt < Date.now()) return false;
 
-  // mark user verified
+  localStorage.removeItem(EMAIL_OTP_KEY);
+
   const user = getUserById(userId);
   if (!user) return false;
+
   user.emailVerified = true;
-  user.emailVerification = null;
   updateUser(user);
+
   return true;
 }
 
@@ -220,5 +178,5 @@ export const clearAllData = () => {
   localStorage.removeItem(USERS_KEY);
   localStorage.removeItem(FORMS_KEY);
   localStorage.removeItem(ADMIN_NOTIFICATIONS_KEY);
-  localStorage.removeItem(EMAIL_CODES_KEY);
+  localStorage.removeItem(EMAIL_OTP_KEY);
 };
