@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -8,42 +8,36 @@ export default async function handler(req, res) {
   const { email, code } = req.body;
 
   if (!email || !code) {
-    return res.status(400).json({ error: "Missing email or code" });
+    return res.status(400).json({ error: "Missing email or OTP code" });
   }
 
   try {
-    // Gmail SMTP transporter
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    // Set API Key
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-    // Email content
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    const msg = {
       to: email,
-      subject: "Your Email Verification Code",
+      from: process.env.SENDGRID_FROM, // MUST be verified in SendGrid
+      subject: "Your Verification Code",
       text: `Your verification code is: ${code}`,
       html: `
-        <div style="font-family:sans-serif; padding:15px;">
-          <h2>Verification Code</h2>
-          <p style="font-size:18px;">Your OTP is:</p>
-          <h1 style="background:#eee; padding:10px; text-align:center;">
-            ${code}
-          </h1>
-          <p>This code will expire in 10 minutes.</p>
+        <div style="padding: 15px; font-family: Arial;">
+          <h2>Email Verification</h2>
+          <p>Your OTP code is:</p>
+          <h1 style="text-align:center; padding:10px; background:#eee;">${code}</h1>
+          <p>This code is valid for 10 minutes.</p>
         </div>
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    await sgMail.send(msg);
 
     return res.status(200).json({ success: true, message: "Email sent successfully" });
   } catch (error) {
-    console.error("Email Error:", error);
-    return res.status(500).json({ error: "Failed to send email", detail: error.message });
+    console.error("SendGrid Email Error:", error.response?.body || error);
+    return res.status(500).json({
+      error: "Failed to send email",
+      details: error.response?.body
+    });
   }
 }
