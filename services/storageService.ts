@@ -1,101 +1,103 @@
 // services/storageService.ts
 
-import { API_BASE_URL } from "./config";
+import { v4 as uuidv4 } from "uuid";
 
-// ---------- Local Storage Setup ----------
-
+// ---------- Local Storage Keys ----------
 const USERS_KEY = "audit_users";
 const CURRENT_USER_KEY = "current_user";
 const EMAIL_OTP_KEY = "email_otp";
 
-// ---------- User Helpers ----------
+// ---------- USER HELPERS ----------
 
+// Get all users
 export function getUsers() {
   return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
 }
 
+// Save all users
+function saveUsers(users: any[]) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+// Add new user
+export function addUser(user: any) {
+  const users = getUsers();
+  const newUser = {
+    ...user,
+    id: uuidv4(),
+    emailVerified: false,
+    createdAt: Date.now(),
+  };
+
+  users.push(newUser);
+  saveUsers(users);
+
+  return newUser;
+}
+
+// Get user by ID
 export function getUserById(id: string) {
   return getUsers().find((u: any) => u.id === id);
 }
 
+// Update user
 export function updateUser(updatedUser: any) {
   const users = getUsers().map((u: any) =>
     u.id === updatedUser.id ? updatedUser : u
   );
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  saveUsers(users);
 }
 
-export function saveUser(user: any) {
-  const users = getUsers();
-  users.push(user);
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
+// Set current logged in user
 export function setCurrentUser(id: string) {
   localStorage.setItem(CURRENT_USER_KEY, id);
 }
 
+// Get logged in user
 export function getCurrentUser() {
   const id = localStorage.getItem(CURRENT_USER_KEY);
   return id ? getUserById(id) : null;
 }
 
-// ---------- OTP GENERATION & EMAIL SEND ----------
+// ---------- OTP GENERATION ----------
 
-export async function generateEmailVerificationCode(userId: string) {
+export function generateEmailVerificationCode(userId: string) {
   const user = getUserById(userId);
-  if (!user) throw new Error("User not found");
+  if (!user) throw new Error("User Not Found");
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+  const expiresAt = Date.now() + 10 * 60 * 1000;
 
-  // Save OTP locally (for verify page)
+  // save OTP locally
   localStorage.setItem(
     EMAIL_OTP_KEY,
-    JSON.stringify({ userId, otp, expiresAt })
+    JSON.stringify({
+      userId,
+      code: otp,
+      expiresAt,
+    })
   );
 
-  try {
-    // POST request → backend → SendGrid → email send
-    const resp = await fetch(`${API_BASE_URL}/send-otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: user.email,
-        code: otp,
-      }),
-    });
-
-    if (!resp.ok) {
-      console.error("OTP backend error:", await resp.text());
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    console.error("Failed to send OTP:", err);
-    return false;
-  }
+  return { code: otp, expiresAt };
 }
 
 // ---------- OTP VERIFY ----------
 
 export function verifyEmailCode(userId: string, enteredOtp: string) {
   const stored = JSON.parse(localStorage.getItem(EMAIL_OTP_KEY) || "null");
-
   if (!stored) return false;
   if (stored.userId !== userId) return false;
-  if (stored.otp !== enteredOtp) return false;
-  if (stored.expiresAt < Date.now()) return false; // expired
+  if (stored.code !== enteredOtp) return false;
+  if (stored.expiresAt < Date.now()) return false;
 
-  // OTP success → remove OTP → mark user verified
-  localStorage.removeItem(EMAIL_OTP_KEY);
-
+  // OTP Verified -> Mark user verified
   const user = getUserById(userId);
   if (!user) return false;
 
   user.emailVerified = true;
   updateUser(user);
+
+  localStorage.removeItem(EMAIL_OTP_KEY);
 
   return true;
 }
