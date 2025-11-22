@@ -108,31 +108,20 @@ export const updateAdminNotification = (updated: any) => {
 // OTP EMAIL via BACKEND (SendGrid)
 // ------------------------------------
 
-/**
- * generateEmailVerificationCode
- * - Creates OTP
- * - Saves to localStorage
- * - Sends OTP through backend (/api/send-otp)
- */
 export async function generateEmailVerificationCode(userId: string) {
   const user = getUserById(userId);
   if (!user) throw new Error("User not found");
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+  const expiresAt = Date.now() + 10 * 60 * 1000;
 
-  // save locally for verification
   localStorage.setItem(
     EMAIL_OTP_KEY,
-    JSON.stringify({
-      userId,
-      otp,
-      expiresAt,
-    })
+    JSON.stringify({ userId, otp, expiresAt })
   );
 
   try {
-    const resp = await fetch(`${API_BASE_URL}/send-otp`, {
+    const resp = await fetch(`${API_BASE_URL}/api/send-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: user.email, otp }),
@@ -150,10 +139,6 @@ export async function generateEmailVerificationCode(userId: string) {
   }
 }
 
-/**
- * verifyEmailCode
- * - Checks OTP with stored data
- */
 export function verifyEmailCode(userId: string, enteredOtp: string) {
   const stored = JSON.parse(localStorage.getItem(EMAIL_OTP_KEY) || "null");
 
