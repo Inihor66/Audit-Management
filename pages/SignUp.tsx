@@ -1,16 +1,9 @@
-// pages/SignUp.tsx
 import React, { useState } from "react";
 import { Role } from "../types";
 import * as storage from "../services/storageService";
-import { ROLE_CONFIG, API_BASE_URL } from "../constants";
+import { ROLE_CONFIG } from "../constants";
 
-interface SignUpProps {
-  onSignUp: (user: any) => void;
-  onNavigate: (page: string) => void;
-  role?: Role;
-}
-
-const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
+const SignUp = ({ onSignUp, onNavigate, role: initialRole }) => {
   const [role, setRole] = useState<Role>(initialRole || Role.FIRM);
 
   const [formData, setFormData] = useState({
@@ -27,17 +20,16 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as keyof typeof Role;
-    setRole(Role[value]);
+  const handleRoleChange = (e) => {
+    setRole(Role[e.target.value]);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -49,7 +41,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
     setLoading(true);
 
     try {
-      const newUserPayload: any = {
+      const payload: any = {
         role,
         name: formData.name,
         email: formData.email,
@@ -62,54 +54,39 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
         ...(role === Role.ADMIN && { adminCode: formData.adminCode }),
       };
 
-      const newUser = storage.addUser(newUserPayload);
+      const newUser = storage.addUser(payload);
 
-      // ---------- EMAIL VERIFICATION FOR ADMIN & FIRM ----------
+      // SEND OTP only for Firm & Admin
       if (role === Role.FIRM || role === Role.ADMIN) {
-        const verification = await storage.generateEmailVerificationCode(newUser.id);
+        const sent = await storage.generateEmailVerificationCode(newUser.id);
 
-        const res = await fetch(`${API_BASE_URL}/email/send-verification`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: newUser.id,
-            email: newUser.email,
-            code: verification.code,
-            expiresAt: verification.expiresAt,
-          }),
-        });
-
-        if (!res.ok) {
-          setError("Failed to send verification email. Please try again.");
+        if (!sent) {
+          setError("Failed to send verification email.");
           setLoading(false);
           return;
         }
 
         sessionStorage.setItem("pendingVerificationUserId", newUser.id);
-        sessionStorage.setItem("pendingVerificationRole", role.toString());
-        onNavigate("verify");
+        sessionStorage.setItem(
+          "pendingVerificationRole",
+          role.toString()
+        );
 
+        onNavigate("verify");
         setLoading(false);
         return;
       }
 
-      // STUDENT: no email verification
+      // STUDENT → no OTP
       onSignUp(newUser);
       setLoading(false);
-    } catch (err: any) {
-      setError(err?.message || "Something went wrong.");
+    } catch (err) {
+      setError("Something went wrong.");
       setLoading(false);
     }
   };
 
-  const config = ROLE_CONFIG[role] || { name: "User", hex: "#000000" };
-
-  const getButtonClass = () => {
-    if (role === Role.FIRM) return "btn-firm";
-    if (role === Role.STUDENT) return "btn-student";
-    if (role === Role.ADMIN) return "btn-admin";
-    return "btn";
-  };
+  const config = ROLE_CONFIG[role];
 
   return (
     <div className="page-center">
@@ -127,38 +104,20 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
         <div className="form-group">
           <label>{role === Role.FIRM ? "Firm Name" : "Full Name"}</label>
-          <input
-            name="name"
-            type="text"
-            required
-            className="form-input"
-            onChange={handleInputChange}
-          />
+          <input name="name" type="text" required className="form-input" onChange={handleInputChange} />
         </div>
 
         {(role === Role.FIRM || role === Role.ADMIN) && (
           <div className="form-group">
             <label>Location</label>
-            <input
-              name="location"
-              type="text"
-              required
-              className="form-input"
-              onChange={handleInputChange}
-            />
+            <input name="location" type="text" required className="form-input" onChange={handleInputChange} />
           </div>
         )}
 
         {role === Role.ADMIN && (
           <div className="form-group">
             <label>Admin Code</label>
-            <input
-              name="adminCode"
-              type="text"
-              required
-              className="form-input"
-              onChange={handleInputChange}
-            />
+            <input name="adminCode" type="text" required className="form-input" onChange={handleInputChange} />
           </div>
         )}
 
@@ -166,64 +125,34 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
           <>
             <div className="form-group">
               <label>Phone</label>
-              <input
-                name="phone"
-                type="tel"
-                required
-                className="form-input"
-                onChange={handleInputChange}
-              />
+              <input name="phone" type="tel" required className="form-input" onChange={handleInputChange} />
             </div>
 
             <div className="form-group">
               <label>Aadhar</label>
-              <input
-                name="aadhar"
-                type="text"
-                required
-                className="form-input"
-                onChange={handleInputChange}
-              />
+              <input name="aadhar" type="text" required className="form-input" onChange={handleInputChange} />
             </div>
           </>
         )}
 
         <div className="form-group">
           <label>Email</label>
-          <input
-            name="email"
-            type="email"
-            required
-            className="form-input"
-            onChange={handleInputChange}
-          />
+          <input name="email" type="email" required className="form-input" onChange={handleInputChange} />
         </div>
 
         <div className="form-group">
           <label>Password</label>
-          <input
-            name="password"
-            type="password"
-            required
-            className="form-input"
-            onChange={handleInputChange}
-          />
+          <input name="password" type="password" required className="form-input" onChange={handleInputChange} />
         </div>
 
         <div className="form-group">
           <label>Confirm Password</label>
-          <input
-            name="confirmPassword"
-            type="password"
-            required
-            className="form-input"
-            onChange={handleInputChange}
-          />
+          <input name="confirmPassword" type="password" required className="form-input" onChange={handleInputChange} />
         </div>
 
         {error && <p className="form-error">{error}</p>}
 
-        <button type="submit" className={`btn ${getButtonClass()}`} disabled={loading}>
+        <button type="submit" className={`btn btn-primary`} disabled={loading}>
           {loading ? "Creating account..." : `Sign Up as ${config.name}`}
         </button>
       </form>
