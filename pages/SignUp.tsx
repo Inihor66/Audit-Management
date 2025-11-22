@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Role } from '../types';
 import * as storage from '../services/storageService';
-import { ROLE_CONFIG } from '../constants';
+import { ROLE_CONFIG, API_BASE_URL } from '../constants';
 
 interface SignUpProps {
   onSignUp: (user: any) => void;
@@ -27,13 +27,11 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Input change handle
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Role change handle
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value.toUpperCase();
     if (value === 'FIRM') setRole(Role.FIRM);
@@ -41,7 +39,6 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
     else if (value === 'ADMIN') setRole(Role.ADMIN);
   };
 
-  // Submit handle
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -65,22 +62,33 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
       const newUser = storage.addUser(newUserPayload);
 
-      // For FIRM and ADMIN we require email verification
       if (role === Role.FIRM || role === Role.ADMIN) {
-        const ok = await storage.generateEmailVerificationCode(newUser.id);
-        if (!ok) {
-          setError('Failed to send verification email. Please try again later.');
+        const verification = storage.createEmailVerificationRecord(newUser.id);
+
+        const res = await fetch(`${API_BASE_URL}/email/send-verification`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: newUser.id,
+            email: newUser.email,
+            code: verification.code,
+            expiresAt: verification.expiresAt
+          })
+        });
+
+        if (!res.ok) {
+          setError("Failed to send email. Please try again.");
           setLoading(false);
           return;
         }
-        sessionStorage.setItem('pendingVerificationUserId', newUser.id);
-        sessionStorage.setItem('pendingVerificationRole', role.toString());
-        onNavigate('verify');
+
+        sessionStorage.setItem("pendingVerificationUserId", newUser.id);
+        sessionStorage.setItem("pendingVerificationRole", role.toString());
+        onNavigate("verify");
         setLoading(false);
         return;
       }
 
-      // STUDENT flow: no verification required
       onSignUp(newUser);
       setLoading(false);
     } catch (err: any) {
@@ -89,8 +97,8 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
     }
   };
 
-  // Role config for button text/color
   const config = ROLE_CONFIG[role] || { name: 'User', hex: '#000000' };
+
   const getButtonClass = () => {
     if (role === Role.FIRM) return 'btn-firm';
     if (role === Role.STUDENT) return 'btn-student';
@@ -137,6 +145,7 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
               <label>Phone</label>
               <input name="phone" type="tel" required className="form-input" onChange={handleInputChange} />
             </div>
+
             <div className="form-group">
               <label>Aadhar</label>
               <input name="aadhar" type="text" required className="form-input" onChange={handleInputChange} />
@@ -161,14 +170,9 @@ const SignUp = ({ onSignUp, onNavigate, role: initialRole }: SignUpProps) => {
 
         {error && <p className="form-error">{error}</p>}
 
-        <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <button type="submit" className={`btn ${getButtonClass()}`} disabled={loading}>
-            {loading ? 'Creating account...' : `Sign Up as ${config.name}`}
-          </button>
-          <button type="button" onClick={() => onNavigate('welcome')} className="btn btn-primary">
-            Back to role selection
-          </button>
-        </div>
+        <button type="submit" className={`btn ${getButtonClass()}`} disabled={loading}>
+          {loading ? 'Creating account...' : `Sign Up as ${config.name}`}
+        </button>
       </form>
     </div>
   );
