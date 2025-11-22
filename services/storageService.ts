@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./config";
+import { API_BASE_URL } from "../constants";
 
 const USERS_KEY = "audit_users";
 const CURRENT_USER_KEY = "current_user";
