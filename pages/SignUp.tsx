@@ -3,7 +3,13 @@ import { Role } from "../types";
 import * as storage from "../services/storageService";
 import { ROLE_CONFIG } from "../constants";
 
-const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole }) => {
+interface SignUpProps {
+  onSignUp?: (user: any) => void;
+  onNavigate?: (page: string) => void;
+  role?: Role;
+}
+
+const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole }: SignUpProps) => {
   const [role, setRole] = useState<Role>(initialRole || Role.FIRM);
 
   const [formData, setFormData] = useState({
@@ -20,16 +26,16 @@ const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleRoleChange = (e) => {
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setRole(Role[e.target.value]);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -87,7 +93,61 @@ const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole 
     <div className="page-center">
       <form onSubmit={handleSubmit} className="auth-form-card">
         <h2>Create your account</h2>
-        {/* Rest of the form code remains the same */}
+        <div className="form-group">
+          <label>I am a...</label>
+          <select value={Role[role]} onChange={handleRoleChange} className="form-select">
+            <option value="FIRM">Firm</option>
+            <option value="STUDENT">Student</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label>{role === Role.FIRM ? "Firm Name" : "Full Name"}</label>
+          <input name="name" type="text" required className="form-input" onChange={handleInputChange} />
+        </div>
+
+        {(role === Role.FIRM || role === Role.ADMIN) && (
+          <div className="form-group">
+            <label>Location</label>
+            <input name="location" type="text" required className="form-input" onChange={handleInputChange} />
+          </div>
+        )}
+
+        {role === Role.ADMIN && (
+          <div className="form-group">
+            <label>Admin Code</label>
+            <input name="adminCode" type="text" required className="form-input" onChange={handleInputChange} />
+          </div>
+        )}
+
+        {role === Role.STUDENT && (
+          <>
+            <div className="form-group">
+              <label>Phone</label>
+              <input name="phone" type="tel" required className="form-input" onChange={handleInputChange} />
+            </div>
+            <div className="form-group">
+              <label>Aadhar</label>
+              <input name="aadhar" type="text" required className="form-input" onChange={handleInputChange} />
+            </div>
+          </>
+        )}
+
+        <div className="form-group">
+          <label>Email</label>
+          <input name="email" type="email" required className="form-input" onChange={handleInputChange} />
+        </div>
+        <div className="form-group">
+          <label>Password</label>
+          <input name="password" type="password" required className="form-input" onChange={handleInputChange} />
+        </div>
+        <div className="form-group">
+          <label>Confirm Password</label>
+          <input name="confirmPassword" type="password" required className="form-input" onChange={handleInputChange} />
+        </div>
+
+        {error && <p className="form-error">{error}</p>}
+
         <button type="submit" className={`btn btn-primary`} disabled={loading}>
           {loading ? "Creating account..." : `Sign Up as ${config.name}`}
         </button>
