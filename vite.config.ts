@@ -13,21 +13,19 @@ export default defineConfig(({ mode }) => {
 
     plugins: [react()],
 
-    // REMOVE process.env override (it breaks frontend JS)
     define: {
       __APP_ENV__: env,
     },
 
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'src'), // ← FIXED
+        '@': path.resolve(__dirname, './src'), // IMPORTANT FIX
       },
     },
 
     build: {
       rollupOptions: {
-        // You don't need to externalize node modules for frontend
-        external: [],
+        // Remove external — not needed for frontend
       },
     },
   };
