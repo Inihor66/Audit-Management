@@ -1,37 +1,33 @@
-import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig(({ mode }) => {
-  // Load environment variables that start with VITE_
-  const env = loadEnv(mode, process.cwd(), 'VITE_');
+  const env = loadEnv(mode, process.cwd());
 
   return {
     server: {
       port: 3000,
       host: '0.0.0.0',
     },
+
     plugins: [react()],
+
+    // REMOVE process.env override (it breaks frontend JS)
     define: {
-      // Makes env variables available in frontend safely
-      'process.env': { ...env },
+      __APP_ENV__: env,
     },
+
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(__dirname, 'src'), // ← FIXED
       },
     },
+
     build: {
       rollupOptions: {
-        // Prevent Node-only modules (including nodemailer) from being bundled
-        external: [
-          'nodemailer',
-          'path',
-          'fs',
-          'os',
-          'net',
-          'crypto'
-        ],
+        // You don't need to externalize node modules for frontend
+        external: [],
       },
     },
   };
