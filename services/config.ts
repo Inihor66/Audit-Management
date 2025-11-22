@@ -2,28 +2,23 @@
 import { Role } from "./types";
 
 // ------------------------------------
+// API BASE URL
+// ------------------------------------
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://audit-management-wgbd.onrender.com/api";  // <-- MAIN FIX
+
+// ------------------------------------
 // ROLE CONFIG
 // ------------------------------------
 export const ROLE_CONFIG = {
-  [Role.FIRM]: {
-    name: "Firm",
-    hex: "#3B82F6",
-    freeEntries: 5,
-  },
-  [Role.STUDENT]: {
-    name: "Student",
-    hex: "#F97316",
-    freeEntries: 10,
-  },
-  [Role.ADMIN]: {
-    name: "Admin",
-    hex: "#16A34A",
-    freeEntries: 9999,
-  },
+  [Role.FIRM]: { name: "Firm", hex: "#3B82F6", freeEntries: 5 },
+  [Role.STUDENT]: { name: "Student", hex: "#F97316", freeEntries: 10 },
+  [Role.ADMIN]: { name: "Admin", hex: "#16A34A", freeEntries: 9999 },
 };
 
 // ------------------------------------
-// CONTACT INFORMATION
+// CONTACT INFO
 // ------------------------------------
 export const CONTACT_INFO = {
   email: "support@example.com",
@@ -58,9 +53,3 @@ export const SUBSCRIPTION_PLANS = {
     duration_months: 12,
   },
 };
-
-// ------------------------------------
-// API BASE URL (Vite Compatible)
-// ------------------------------------
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
