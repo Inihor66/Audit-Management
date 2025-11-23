@@ -7,19 +7,21 @@ import emailRoutes from "./routes/emailRoutes.js";
 dotenv.config();
 
 const app = express();
-app.use(express.json());
-app.use(cors());
 
-// ROOT CHECK
+// MIDDLEWARES
+app.use(cors());
+app.use(express.json());
+
+// TEST ROOT ROUTE
 app.get("/", (req, res) => {
-  res.send("Audit App Backend Running");
+  res.send("Audit App Backend Running Successfully ✔️");
 });
 
-// EMAIL ROUTES
-app.use("/api", emailRoutes);
+// MAIN API ROUTES
+app.use("/api", emailRoutes);   // <-- IMPORTANT (DON’T CHANGE)
 
-// SERVER START
+// START SERVER
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
