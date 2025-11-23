@@ -5,7 +5,7 @@ import { ROLE_CONFIG } from "../constants";
 
 interface SignUpProps {
   onSignUp?: (user: any) => void;
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: string, role?: Role) => void;
   role?: Role;
 }
 
@@ -45,7 +45,6 @@ const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole 
     }
 
     setLoading(true);
-
     try {
       const payload: any = {
         role,
@@ -89,11 +88,21 @@ const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole 
 
   const config = ROLE_CONFIG[role];
 
+  const getRoleButtonClass = () => {
+    switch (role) {
+      case Role.FIRM: return "btn-firm";
+      case Role.STUDENT: return "btn-student";
+      case Role.ADMIN: return "btn-admin";
+      default: return "";
+    }
+  };
+
   return (
     <div className="page-center">
       <form onSubmit={handleSubmit} className="auth-form-card">
         <h2>Create your account</h2>
 
+        {/* Role Change */}
         <div className="form-group">
           <label>I am a...</label>
           <select value={Role[role]} onChange={handleRoleChange} className="form-select">
@@ -153,9 +162,25 @@ const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole 
 
         {error && <p className="form-error">{error}</p>}
 
-        <button type="submit" className={`btn btn-primary`} disabled={loading}>
+        {/* DARK BUTTON LIKE LOGIN PAGE */}
+        <button type="submit" className={`btn ${getRoleButtonClass()}`} disabled={loading}>
           {loading ? "Creating account..." : `Sign Up as ${config.name}`}
         </button>
+
+        {/* BACK TO ROLE SELECTION */}
+        <div className="auth-links" style={{ marginTop: "1rem", textAlign: "center" }}>
+          <button
+            onClick={() => onNavigate("welcome")}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--color-text-secondary)",
+              cursor: "pointer",
+            }}
+          >
+            Back to role selection
+          </button>
+        </div>
       </form>
     </div>
   );
