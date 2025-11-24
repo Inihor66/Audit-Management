@@ -20,7 +20,7 @@ export const ROLE_CONFIG = {
 // ✅ Only ONE API_BASE_URL
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "https://audit-management-2.onrender.com/api";
+  "https://audit-management-2.onrender.com";
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   { key: 'monthly', name: 'Monthly', price: 400, duration_months: 1 },
