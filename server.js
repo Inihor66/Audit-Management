@@ -8,19 +8,18 @@ dotenv.config();
 
 const app = express();
 
-// ------------------ FIXED CORS ------------------
+// FIXED CORS
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
       "https://audit-management-gray.vercel.app",
-      "https://audit-management-2.onrender.com"
     ],
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
-// -------------------------------------------------
 
 app.use(express.json());
 
