@@ -8,8 +8,20 @@ dotenv.config();
 
 const app = express();
 
-// MIDDLEWARES
-app.use(cors());
+// ------------------ FIXED CORS ------------------
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://audit-management-gray.vercel.app",
+      "https://audit-management-2.onrender.com"
+    ],
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
+// -------------------------------------------------
+
 app.use(express.json());
 
 // TEST ROOT ROUTE
@@ -18,7 +30,7 @@ app.get("/", (req, res) => {
 });
 
 // MAIN API ROUTES
-app.use("/api", emailRoutes);   // <-- IMPORTANT (DON’T CHANGE)
+app.use("/api", emailRoutes);
 
 // START SERVER
 const PORT = process.env.PORT || 4000;
