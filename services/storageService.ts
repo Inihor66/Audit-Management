@@ -1,113 +1,143 @@
-import { API_BASE_URL } from "../constants";
+import { User, FormData, AdminNotification, Role, Subscription } from '../types';
+import { ROLE_CONFIG } from '../constants';
 
-const USERS_KEY = "audit_users";
-const CURRENT_USER_KEY = "current_user";
-const EMAIL_OTP_KEY = "email_otp";
+const USERS_KEY = 'audit_flow_users';
+const FORMS_KEY = 'audit_flow_forms';
+const ADMIN_NOTIFICATIONS_KEY = 'audit_flow_admin_notifications';
 
-// ---------------- USERS ----------------
-
-export function getUsers() {
-  return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+// --- Generic Helpers ---
+function getItem<T,>(key: string, defaultValue: T): T {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+        console.error(`Error reading from localStorage key "${key}":`, error);
+        return defaultValue;
+    }
 }
 
-export function getUserById(id: string) {
-  return getUsers().find((u: any) => u.id === id);
+function setItem<T,>(key: string, value: T): void {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+        console.error(`Error writing to localStorage key "${key}":`, error);
+    }
 }
 
-export function updateUser(updatedUser: any) {
-  const users = getUsers().map((u: any) =>
-    u.id === updatedUser.id ? updatedUser : u
-  );
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
+// --- User Management ---
+export const getUsers = (): User[] => getItem<User[]>(USERS_KEY, []);
+export const saveUsers = (users: User[]): void => setItem(USERS_KEY, users);
 
-export function addUser(user: any) {
-  if (!user.id) {
-    user.id = crypto.randomUUID();
-  }
+export const addUser = (newUser: Omit<User, 'id' | 'subscription' | 'notifications' | 'pendingPaymentSS' | 'isVerified' | 'verificationCode'>): User => {
+    const users = getUsers();
+    const userExists = users.some(user => user.email.toLowerCase() === newUser.email.toLowerCase() && user.role === newUser.role);
+    if (userExists) {
+        throw new Error('An account with this email already exists for the selected role.');
+    }
 
-  const users = getUsers();
-  users.push(user);
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    // Validate admin code uniqueness if the role is ADMIN
+    if (newUser.role === Role.ADMIN) {
+        if (!newUser.adminCode || newUser.adminCode.trim().length === 0) {
+            throw new Error('Admin Code is required.');
+        }
+        const adminCodeExists = users.some(user => 
+            user.role === Role.ADMIN && 
+            user.adminCode?.trim().toLowerCase() === newUser.adminCode?.trim().toLowerCase()
+        );
+        if (adminCodeExists) {
+            throw new Error('This Admin Code is already in use. Please choose another one.');
+        }
+    }
+    
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-  return user;
-}
+    const user: User = {
+        ...newUser,
+        id: crypto.randomUUID(),
+        pendingPaymentSS: null,
+        notifications: [],
+        isVerified: false, // Require email verification
+        verificationCode: verificationCode, // Assign verification code
+        subscription: {
+            status: 'inactive',
+            plan: 'free',
+            startDate: null,
+            expiryDate: null,
+            entriesUsed: 0,
+            allowedEntries: ROLE_CONFIG[newUser.role].freeEntries,
+        },
+    };
 
-export function setCurrentUser(id: string) {
-  localStorage.setItem(CURRENT_USER_KEY, id);
-}
+    users.push(user);
+    saveUsers(users);
+    return user;
+};
 
-export function getCurrentUser() {
-  const id = localStorage.getItem(CURRENT_USER_KEY);
-  return id ? getUserById(id) : null;
-}
+export const getUserById = (id: string): User | undefined => getUsers().find(u => u.id === id);
+export const updateUser = (updatedUser: User): void => {
+    const users = getUsers();
+    const index = users.findIndex(u => u.id === updatedUser.id);
+    if (index !== -1) {
+        users[index] = updatedUser;
+        saveUsers(users);
+    }
+};
 
-// ---------------- OTP GENERATION ----------------
 
-export async function generateEmailVerificationCode(userId: string) {
-  const user = getUserById(userId);
-  if (!user) throw new Error("User not found");
+// --- Form Management ---
+export const getForms = (): FormData[] => getItem<FormData[]>(FORMS_KEY, []);
+export const saveForms = (forms: FormData[]): void => setItem(FORMS_KEY, forms);
 
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+export const addForm = (newForm: Omit<FormData, 'id' | 'createdAt' | 'postEditFees' | 'postEditTerms' | 'reminderNotified'>): FormData => {
+    const forms = getForms();
+    const form: FormData = {
+        ...newForm,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        postEditFees: null,
+        postEditTerms: null,
+        reminderNotified: false,
+    };
+    forms.push(form);
+    saveForms(forms);
+    return form;
+};
 
-  // Save OTP locally
-  localStorage.setItem(
-    EMAIL_OTP_KEY,
-    JSON.stringify({ userId, otp, expiresAt })
-  );
+export const getFormById = (id: string): FormData | undefined => getForms().find(f => f.id === id);
 
-  try {
-    // ✔ Correct backend URL (matches your emailRoutes.js)
-    const resp = await fetch(`${API_BASE_URL}/api/send-otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: user.email,
-        code: otp,
-      }),
+export const updateForm = (updatedForm: FormData): void => {
+    const forms = getForms();
+    const index = forms.findIndex(f => f.id === updatedForm.id);
+    if (index !== -1) {
+        forms[index] = updatedForm;
+        saveForms(forms);
+    }
+};
+
+
+// --- Admin Notification Management ---
+export const getAdminNotifications = (): AdminNotification[] => getItem<AdminNotification[]>(ADMIN_NOTIFICATIONS_KEY, []);
+export const saveAdminNotifications = (notifications: AdminNotification[]): void => setItem(ADMIN_NOTIFICATIONS_KEY, notifications);
+
+export const addAdminNotification = (firm: User, ssDataUrl: string): void => {
+    const notifications = getAdminNotifications();
+    notifications.push({
+        id: crypto.randomUUID(),
+        firmId: firm.id,
+        firmName: firm.name,
+        type: 'payment_ss',
+        ssDataUrl,
+        createdAt: new Date().toISOString(),
+        handled: false,
     });
+    saveAdminNotifications(notifications);
+};
 
-    return resp.ok;
-  } catch (err) {
-    console.error("Send OTP FAILED:", err);
-    return false;
-  }
-}
-
-// ---------------- OTP VERIFY ----------------
-
-export function verifyEmailCode(userId: string, enteredOtp: string) {
-  const stored = JSON.parse(localStorage.getItem(EMAIL_OTP_KEY) || "null");
-
-  if (!stored) return false;
-  if (stored.userId !== userId) return false;
-  if (stored.otp !== enteredOtp) return false;
-  if (stored.expiresAt < Date.now()) return false;
-
-  localStorage.removeItem(EMAIL_OTP_KEY);
-
-  const user = getUserById(userId);
-  if (!user) return false;
-
-  user.emailVerified = true;
-  updateUser(user);
-
-  return true;
-}
-
-// ---------------- LOGIN ----------------
-
-export function getUserByEmail(email: string) {
-  return getUsers().find((u: any) => u.email === email);
-}
-
-export function loginUser(email: string, password: string) {
-  const user = getUserByEmail(email);
-
-  if (!user) return null;
-  if (user.passwordHash !== password) return null;
-
-  setCurrentUser(user.id);
-  return user;
-}
+export const updateAdminNotification = (updatedNotification: AdminNotification): void => {
+    const notifications = getAdminNotifications();
+    const index = notifications.findIndex(n => n.id === updatedNotification.id);
+    if (index !== -1) {
+        notifications[index] = updatedNotification;
+        saveAdminNotifications(notifications);
+    }
+};
