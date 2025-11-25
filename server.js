@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -8,30 +7,27 @@ dotenv.config();
 
 const app = express();
 
-// FIXED CORS
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://audit-management-gray.vercel.app",
-    ],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+// ✅ FIX: ALLOW BOTH LOCAL & VERCEL FRONTEND
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://audit-management-gray.vercel.app",   // <-- your Vercel frontend
+    "https://audit-management.vercel.app"         // <-- optional future domain
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 app.use(express.json());
 
-// TEST ROOT ROUTE
+// TEST ROOT
 app.get("/", (req, res) => {
   res.send("Audit App Backend Running Successfully ✔️");
 });
 
-// MAIN API ROUTES
+// MAIN ROUTES
 app.use("/api", emailRoutes);
 
-// START SERVER
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
