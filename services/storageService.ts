@@ -49,22 +49,24 @@ export async function generateEmailVerificationCode(userId: string) {
   if (!user) throw new Error("User not found");
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = Date.now() + 10 * 60 * 1000;
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 min expiry
 
-  // save otp local for verify page
+  // store locally for verify page
   localStorage.setItem(
     EMAIL_OTP_KEY,
     JSON.stringify({ userId, otp, expiresAt })
   );
 
   try {
-    // 🔥 CHANGED LINE BELOW (send-otp → sendEmail)
-    const resp = await fetch(`${API_BASE_URL}/sendEmail`, {
+    // 🔥 FIXED: Correct backend endpoint + payload
+    const resp = await fetch(`${API_BASE_URL}/email/send-verification`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        userId,
         email: user.email,
         code: otp,
+        expiresAt,
       }),
     });
 
