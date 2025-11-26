@@ -3,6 +3,12 @@ import React, { useState, useEffect } from 'react';
 import * as storage from '../services/storageService';
 import { User, Role } from '../types';
 
+// --- PASTE YOUR EMAILJS KEYS HERE ---
+// Get these from https://dashboard.emailjs.com/admin
+const DEFAULT_SERVICE_ID = 'YOUR_SERVICE_ID_HERE';  // Example: 'service_823...'
+const DEFAULT_TEMPLATE_ID = 'YOUR_TEMPLATE_ID_HERE'; // Example: 'template_321...'
+const DEFAULT_PUBLIC_KEY = 'YOUR_PUBLIC_KEY_HERE';  // Example: 'user_123...'
+
 interface VerifyEmailPageProps {
     userId: string;
     onNavigate: (page: string, options?: { role?: Role }) => void;
@@ -12,9 +18,16 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
     const [user, setUser] = useState<User | null>(null);
     const [verificationCodeInput, setVerificationCodeInput] = useState('');
     const [isVerified, setIsVerified] = useState(false);
-    const [error, setError] = useState('');
-    const [emailContent, setEmailContent] = useState('');
-    const [emailStatus, setEmailStatus] = useState<'sending' | 'sent'>('sending');
+    const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+    const [statusMessage, setStatusMessage] = useState('');
+    
+    // Config State
+    const [showConfig, setShowConfig] = useState(false);
+    const [config, setConfig] = useState({
+        serviceId: localStorage.getItem('emailjs_service_id') || (DEFAULT_SERVICE_ID !== 'YOUR_SERVICE_ID_HERE' ? DEFAULT_SERVICE_ID : ''),
+        templateId: localStorage.getItem('emailjs_template_id') || (DEFAULT_TEMPLATE_ID !== 'YOUR_TEMPLATE_ID_HERE' ? DEFAULT_TEMPLATE_ID : ''),
+        publicKey: localStorage.getItem('emailjs_public_key') || (DEFAULT_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY_HERE' ? DEFAULT_PUBLIC_KEY : ''),
+    });
 
     useEffect(() => {
         const foundUser = storage.getUserById(userId);
@@ -23,85 +36,108 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
             if (foundUser.isVerified) {
                 setIsVerified(true);
             } else {
-                // Generate email content locally for reliability
-                const code = foundUser.verificationCode || 'ERROR';
-                const content = `Hi ${foundUser.name},
-
-Your verification code for Audit Flow Manager is: ${code}
-
-Please enter this code in the verification page to activate your account.
-
-Best regards,
-Audit Flow Manager Team`;
-                setEmailContent(content);
-                
-                // Simulate network delay
-                const timer = setTimeout(() => {
-                    setEmailStatus('sent');
-                }, 1500);
-                return () => clearTimeout(timer);
+                // If we have keys, try to send automatically
+                if (config.serviceId && config.templateId && config.publicKey) {
+                    sendEmail(foundUser, foundUser.verificationCode || 'ERROR');
+                } else {
+                    setStatus('idle');
+                    setStatusMessage('Please configure EmailJS keys below to send actual emails.');
+                    setShowConfig(true);
+                }
             }
         } else {
-            setError('User not found. You may need to sign up again.');
+            setStatus('error');
+            setStatusMessage('User not found. Please sign up again.');
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]);
 
+    const saveConfig = (newConfig: typeof config) => {
+        localStorage.setItem('emailjs_service_id', newConfig.serviceId);
+        localStorage.setItem('emailjs_template_id', newConfig.templateId);
+        localStorage.setItem('emailjs_public_key', newConfig.publicKey);
+        setConfig(newConfig);
+        setShowConfig(false);
+        if (user) {
+            sendEmail(user, user.verificationCode || 'ERROR');
+        }
+    };
+
+    const sendEmail = async (currentUser: User, code: string) => {
+        if (!config.serviceId || !config.templateId || !config.publicKey) {
+            setStatus('error');
+            setStatusMessage('Missing EmailJS Configuration. Please set keys below.');
+            setShowConfig(true);
+            return;
+        }
+
+        setStatus('sending');
+        setStatusMessage('Sending verification email...');
+
+        try {
+            const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    service_id: config.serviceId,
+                    template_id: config.templateId,
+                    user_id: config.publicKey,
+                    template_params: {
+                        to_email: currentUser.email,
+                        to_name: currentUser.name,
+                        verification_code: code,
+                        message: `Your verification code is: ${code}`
+                    }
+                }),
+            });
+
+            if (response.ok) {
+                setStatus('success');
+                setStatusMessage(`Verification code sent to ${currentUser.email}`);
+            } else {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Failed to send email');
+            }
+        } catch (err) {
+            console.error('Email Send Error:', err);
+            setStatus('error');
+            setStatusMessage('Failed to send email. Check your keys or network connection.');
+            setShowConfig(true); // Show config on error to allow fixing keys
+        }
+    };
+
     const handleVerify = () => {
-        setError('');
         if (user && user.verificationCode) {
             if (verificationCodeInput === user.verificationCode) {
                 const updatedUser = { ...user, isVerified: true, verificationCode: undefined };
                 storage.updateUser(updatedUser);
                 setIsVerified(true);
             } else {
-                setError('Invalid verification code. Please try again.');
+                setStatus('error');
+                setStatusMessage('Invalid code. Please try again.');
             }
-        } else {
-             setError('Verification code error. Please contact support.');
         }
     };
 
-    const handleOpenMailClient = () => {
-        if (!user || !emailContent) return;
-        const subject = encodeURIComponent("Verify Your Account - Audit Flow Manager");
-        const body = encodeURIComponent(emailContent);
-        // Opens the user's default mail client with the email draft
-        window.location.href = `mailto:${user.email}?subject=${subject}&body=${body}`;
+    const handleResend = () => {
+        if (user) sendEmail(user, user.verificationCode || 'ERROR');
     };
 
-    if (error && !user) {
-        return (
-            <div className="auth-page">
-                <div className="auth-form-card" style={{maxWidth: '32rem', margin: '0 auto'}}>
-                    <h2 className="auth-title">Error</h2>
-                    <p className="error-message">{error}</p>
-                    <button onClick={() => onNavigate('signup')} className="submit-button firm" style={{marginTop: '1rem'}}>Go to Sign Up</button>
-                </div>
-            </div>
-        );
-    }
-
-    if (!user) {
-        return <div className="loading-screen"><p>Loading...</p></div>;
-    }
+    if (!user) return <div className="loading-screen"><p>Loading...</p></div>;
 
     return (
         <div className="auth-page">
             <div className="auth-form-card" style={{maxWidth: '36rem', margin: '0 auto', textAlign: 'center'}}>
                 <h2 className="auth-title">Verify Your Email</h2>
+                
                 {isVerified ? (
-                    <>
-                        <div style={{ margin: '1.5rem 0', color: 'var(--admin-color)', display: 'flex', justifyContent: 'center' }}>
-                             <svg xmlns="http://www.w3.org/2000/svg" style={{width: '4rem', height: '4rem'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div style={{marginTop: '2rem'}}>
+                        <div style={{ margin: '0 auto 1.5rem', color: 'var(--admin-color)', width: '4rem' }}>
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                              </svg>
                         </div>
-                        <p style={{fontSize: '1.125rem', fontWeight: 600, color: 'var(--gray-800)'}}>
-                            Verified Successfully!
-                        </p>
-                        <p style={{color: 'var(--gray-600)', marginTop: '0.5rem'}}>
-                            Your email <strong>{user.email}</strong> has been verified.
-                        </p>
+                        <p style={{fontSize: '1.25rem', fontWeight: 600, color: 'var(--gray-800)'}}>Verified Successfully!</p>
                         <button
                             onClick={() => onNavigate('login', { role: user.role })}
                             className={`submit-button ${user.role.toLowerCase()}`}
@@ -109,65 +145,90 @@ Audit Flow Manager Team`;
                         >
                             Continue to Login
                         </button>
-                    </>
+                    </div>
                 ) : (
                     <>
-                         <p style={{color: 'var(--gray-600)', marginTop: '1rem'}}>
-                            We've sent a verification code to <strong>{user.email}</strong>.
+                        <p style={{color: 'var(--gray-600)', marginTop: '1rem'}}>
+                            Enter the code sent to <strong>{user.email}</strong>
                         </p>
 
-                        {emailStatus === 'sending' ? (
-                             <div className="email-preview-body-loading" style={{marginTop: '1.5rem', minHeight: '10rem'}}>
-                                <p>Sending email...</p>
-                            </div>
-                        ) : (
-                            <div>
-                                <div className="form-group" style={{marginTop: '2rem', textAlign: 'left'}}>
-                                   <label htmlFor="verificationCode" className="form-label" style={{textAlign: 'center', display: 'block', marginBottom: '0.5rem'}}>Enter Verification Code</label>
-                                   <input
-                                        id="verificationCode"
-                                        name="verificationCode"
-                                        type="text"
-                                        value={verificationCodeInput}
-                                        onChange={(e) => setVerificationCodeInput(e.target.value)}
-                                        className="form-input"
-                                        style={{textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5em', fontWeight: 'bold'}}
-                                        maxLength={6}
-                                        placeholder="000000"
-                                   />
-                                </div>
+                        <div style={{marginTop: '2rem'}}>
+                             <input
+                                type="text"
+                                value={verificationCodeInput}
+                                onChange={(e) => setVerificationCodeInput(e.target.value)}
+                                className="form-input"
+                                style={{textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5em', fontWeight: 'bold', maxWidth: '12rem', margin: '0 auto'}}
+                                maxLength={6}
+                                placeholder="000000"
+                           />
+                           <button onClick={handleVerify} className={`submit-button ${user.role.toLowerCase()}`} style={{marginTop: '1rem'}}>
+                                Verify Code
+                           </button>
+                        </div>
 
-                                {error && <p className="error-message" style={{marginTop: '1rem'}}>{error}</p>}
-                                
-                                <button onClick={handleVerify} className={`submit-button ${user.role.toLowerCase()}`} style={{marginTop: '1.5rem'}}>
-                                    Verify Account
-                                </button>
-                                
-                                <div style={{marginTop: '2.5rem', borderTop: '1px solid var(--gray-200)', paddingTop: '1.5rem'}}>
-                                    <p style={{fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '1rem'}}>
-                                        Can't find the email?
-                                    </p>
-                                    
-                                    <button 
-                                        type="button" 
-                                        onClick={handleOpenMailClient}
-                                        style={{color: 'var(--indigo-600)', fontWeight: 500, fontSize: '0.875rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer'}}
-                                    >
-                                        Open Default Mail App
-                                    </button>
-                                    
-                                    <div className="email-preview-container" style={{marginTop: '1rem', textAlign: 'left'}}>
-                                         <div className="email-preview-header">
-                                            <span style={{fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--gray-400)', letterSpacing: '0.05em'}}>Simulation Preview</span>
-                                        </div>
-                                        <div className="email-preview-body" style={{fontFamily: 'monospace', fontSize: '0.875rem'}}>
-                                            {emailContent}
-                                        </div>
-                                        <div className="simulation-notice">
-                                            <p><strong>Note:</strong> Since this is a demo app without a backend server, we simulate email sending. You can copy the code above.</p>
-                                        </div>
-                                    </div>
+                        {/* Status Message Area */}
+                        {(statusMessage || status !== 'idle') && (
+                            <div style={{
+                                marginTop: '1.5rem', 
+                                padding: '1rem', 
+                                borderRadius: '0.5rem',
+                                backgroundColor: status === 'error' ? '#fee2e2' : status === 'success' ? '#dcfce7' : '#f3f4f6',
+                                color: status === 'error' ? '#b91c1c' : status === 'success' ? '#15803d' : '#4b5563'
+                            }}>
+                                {statusMessage}
+                            </div>
+                        )}
+
+                        <div style={{marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem'}}>
+                            <button onClick={handleResend} style={{color: 'var(--indigo-600)', textDecoration: 'underline'}} disabled={status === 'sending'}>
+                                Resend Email
+                            </button>
+                            <button onClick={() => setShowConfig(!showConfig)} style={{color: 'var(--gray-500)', fontSize: '0.875rem'}}>
+                                {showConfig ? 'Hide Config' : 'Configure Email Provider'}
+                            </button>
+                        </div>
+
+                        {/* Runtime Configuration Form */}
+                        {showConfig && (
+                            <div style={{marginTop: '1.5rem', padding: '1.5rem', border: '1px solid var(--gray-300)', borderRadius: '0.5rem', backgroundColor: 'var(--gray-50)', textAlign: 'left'}}>
+                                <h4 style={{margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600}}>EmailJS Configuration</h4>
+                                <p style={{fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '1rem'}}>
+                                    Enter your public keys from <a href="https://dashboard.emailjs.com/" target="_blank" rel="noreferrer">EmailJS Dashboard</a> to enable sending on this deployment.
+                                </p>
+                                <div className="form-group" style={{marginBottom: '0.75rem'}}>
+                                    <label className="form-label">Service ID</label>
+                                    <input 
+                                        type="text" 
+                                        className="form-input" 
+                                        value={config.serviceId} 
+                                        onChange={(e) => setConfig({...config, serviceId: e.target.value})}
+                                        placeholder="service_xxxxx"
+                                    />
                                 </div>
+                                <div className="form-group" style={{marginBottom: '0.75rem'}}>
+                                    <label className="form-label">Template ID</label>
+                                    <input 
+                                        type="text" 
+                                        className="form-input" 
+                                        value={config.templateId} 
+                                        onChange={(e) => setConfig({...config, templateId: e.target.value})}
+                                        placeholder="template_xxxxx"
+                                    />
+                                </div>
+                                <div className="form-group" style={{marginBottom: '1rem'}}>
+                                    <label className="form-label">Public Key</label>
+                                    <input 
+                                        type="text" 
+                                        className="form-input" 
+                                        value={config.publicKey} 
+                                        onChange={(e) => setConfig({...config, publicKey: e.target.value})}
+                                        placeholder="user_xxxxx"
+                                    />
+                                </div>
+                                <button onClick={() => saveConfig(config)} className="submit-button admin">
+                                    Save & Send Email
+                                </button>
                             </div>
                         )}
                     </>
