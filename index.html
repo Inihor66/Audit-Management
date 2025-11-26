@@ -2,14 +2,14 @@
 README: How to Run and Payment Flow Simulation
 
 **How to Run:**
-1. This is a single-page React application built with static files (HTML, CSS, JS).
+1. This is a single-page React application built with static files (HTML, JS).
 2. You do not need to install any dependencies or run a build process.
 3. Simply open this `index.html` file in a modern web browser (like Chrome, Firefox, or Edge). The application will start automatically.
 4. All data is stored in your browser's `localStorage`. To reset the application, clear your browser's `localStorage` for this page.
 
 **Payment Flow Simulation:**
 The subscription payment flow is a simulation and does not involve real money. Here's how it works:
-1. **Firm User:** A user logged in as a 'Firm' can navigate to their profile page and then to the "Manage Subscription" page.
+1. **Firm User:** A user logged in as a 'Firm' can navigate to the "Manage Subscription" page from their dashboard.
 2. **Select Plan:** The firm selects a subscription plan (e.g., Monthly, Yearly).
 3. **Payment Instructions:** The app displays a static UPI ID for payment. This is for demonstration purposes only.
 4. **Upload Screenshot:** The firm is asked to upload a "payment screenshot." They can upload any image file.
@@ -24,17 +24,18 @@ The subscription payment flow is a simulation and does not involve real money. H
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audit Flow Manager</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
 <script type="importmap">
 {
   "imports": {
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0"
   }
 }
 </script>
-<link rel="stylesheet" href="/style.css" />
+<link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <div id="root"></div>
