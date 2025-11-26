@@ -1,87 +1,112 @@
-import React, { useState } from "react";
-import * as storage from "../services/storageService";
-import { Role, User } from "../types";
-import { ROLE_CONFIG } from "../constants";
+import React, { useState } from 'react';
+import { Role, User } from '../types';
+import * as storage from '../services/storageService';
+import { ROLE_CONFIG } from '../constants';
 
 interface LoginProps {
-  onLogin?: (user: User) => void;
-  onNavigate?: (page: string, role?: Role) => void;
-  role?: Role;
+  onLogin: (user: User) => void;
+  onNavigate: (page: string, options?: { role?: Role }) => void;
+  role: Role;
 }
 
-const Login = ({ onLogin = () => {}, onNavigate = () => {}, role: initialRole }: LoginProps) => {
-  const getRoleFromSession = (): Role => {
-    if (initialRole) return initialRole;
-    const roleStr = sessionStorage.getItem("pendingVerificationRole");
-    if (roleStr === "FIRM") return Role.FIRM;
-    if (roleStr === "STUDENT") return Role.STUDENT;
-    if (roleStr === "ADMIN") return Role.ADMIN;
-    return Role.FIRM;
-  };
-
-  const role = getRoleFromSession();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  const config = ROLE_CONFIG[role] ?? { hex: "#000000", name: "User" };
+const Login = ({ onLogin, onNavigate, role }: LoginProps) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const config = ROLE_CONFIG[role];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-
+    setError('');
     try {
       const users = storage.getUsers();
       const user = users.find(u => u.role === role && u.email.toLowerCase() === email.toLowerCase());
-
-      if (user && user.passwordHash === password) {
-        if ((user.role === Role.FIRM || user.role === Role.ADMIN) && !user.emailVerified) {
-          setError("Email not verified. Please verify via the verification page.");
-          return;
+      
+      if (user) {
+        // NOTE: In a real app, passwords would be hashed. This is a simulation.
+        // Verification check is removed as all users are now auto-verified.
+        if (user.passwordHash === password) {
+          onLogin(user);
+        } else {
+          setError('Invalid email or password.');
         }
-        onLogin(user);
-      } else setError("Invalid email or password.");
-    } catch (err: any) {
-      setError(err.message || "An unknown error occurred.");
-    }
-  };
-
-  const getRoleButtonClass = () => {
-    switch (role) {
-      case Role.FIRM: return "btn-firm";
-      case Role.STUDENT: return "btn-student";
-      case Role.ADMIN: return "btn-admin";
-      default: return "";
+      } else {
+        setError('Invalid email or password.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     }
   };
 
   return (
-    <div className="page-center">
+    <div className="auth-page">
+      <div className="auth-container">
+        <h2 className="auth-title">
+          Login as a {config.name}
+        </h2>
+      </div>
+
       <div className="auth-form-container">
         <div className="auth-form-card">
-          <h2>Login as {config.name}</h2>
-          <form onSubmit={handleSubmit}>
+          <form className="auth-form" onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Email</label>
-              <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="form-input" />
+              <label htmlFor="email" className="form-label">
+                Email address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="form-input"
+              />
             </div>
+
             <div className="form-group">
-              <label>Password</label>
-              <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="form-input" />
+              <label htmlFor="password" className="form-label">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="form-input"
+              />
             </div>
-            {error && <p className="form-error">{error}</p>}
-            <div className="form-group" style={{ marginTop: "1rem" }}>
-              <button type="submit" className={`btn ${getRoleButtonClass()}`}>Log in</button>
+
+            {error && <p className="error-message">{error}</p>}
+
+            <div>
+              <button
+                type="submit"
+                className={`submit-button ${role.toLowerCase()}`}
+              >
+                Log in
+              </button>
             </div>
           </form>
 
-          <div className="auth-links" style={{ marginTop: "1rem", textAlign: "center" }}>
-            <button onClick={() => onNavigate("signup", role)} style={{ background: "none", border: "none", color: "var(--color-firm)", cursor: "pointer", marginBottom: "0.5rem" }}>
-              Don't have an account? Sign up
+          <div className="auth-divider">
+            <div className="auth-divider-line-container">
+              <div className="auth-divider-line" />
+            </div>
+            <div className="auth-divider-text-container">
+              <span className="auth-divider-text">Or</span>
+            </div>
+          </div>
+
+          <div className="auth-footer">
+            <button onClick={() => onNavigate('signup')} className="auth-footer-link">
+              Create a new account
             </button>
-            <br />
-            <button onClick={() => onNavigate("welcome")} style={{ background: "none", border: "none", color: "var(--color-text-secondary)", cursor: "pointer" }}>
+            <button onClick={() => onNavigate('welcome')} className="auth-footer-link">
               Back to role selection
             </button>
           </div>
@@ -90,5 +115,4 @@ const Login = ({ onLogin = () => {}, onNavigate = () => {}, role: initialRole }:
     </div>
   );
 };
-
 export default Login;
