@@ -1,27 +1,30 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, FormData } from '../../types';
+import { User, FormData, Role } from '../../types';
 import * as storage from '../../services/storageService';
 import { DashboardLayout } from '../../components/DashboardLayout';
+import { PlusIcon } from '../../components/icons/PlusIcon';
 import { Modal } from '../../components/Modal';
 import AuditForm from './AuditForm';
 import ManageSubscription from './ManageSubscription';
-import ProfilePage from './ProfilePage';
-import { PlusIcon } from '../../components/icons/PlusIcon';
 
 interface FirmDashboardProps {
   user: User;
   onLogout: () => void;
   refreshUser: () => void;
+  onNavigate: (page: string, options?: { role?: Role; formId?: string; }) => void;
 }
 
-const FirmDashboard = ({ user, onLogout, refreshUser }: FirmDashboardProps) => {
-  const [view, setView] = useState('dashboard'); // dashboard, create_form, edit_form, manage_subscription, profile
+const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboardProps) => {
+  const [view, setView] = useState('dashboard'); // dashboard, form_editor, manage_subscription, profile
   const [forms, setForms] = useState<FormData[]>([]);
-  const [selectedForm, setSelectedForm] = useState<FormData | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [formToDelete, setFormToDelete] = useState<FormData | null>(null);
+  const [formToEdit, setFormToEdit] = useState<FormData | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const roleClass = user.role.toLowerCase();
+  const entriesLeft = user.subscription.allowedEntries === 'infinity' ? 'Unlimited' : user.subscription.allowedEntries - user.subscription.entriesUsed;
   const canCreateForm = user.subscription.allowedEntries === 'infinity' || user.subscription.entriesUsed < user.subscription.allowedEntries;
 
   const fetchForms = () => {
@@ -31,33 +34,43 @@ const FirmDashboard = ({ user, onLogout, refreshUser }: FirmDashboardProps) => {
 
   useEffect(() => {
     fetchForms();
-    refreshUser(); 
+    refreshUser();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  const handleFormSaved = () => {
+  const handleFormSuccess = () => {
     fetchForms();
     refreshUser();
     setView('dashboard');
-    setSelectedForm(null);
+    setFormToEdit(null);
   };
 
-  const openDetailModal = (form: FormData) => {
-    setSelectedForm(form);
-    setIsDetailModalOpen(true);
+  const openFormEditor = (form?: FormData) => {
+    if (form) {
+        setFormToEdit(form);
+    } else {
+        if (!canCreateForm) {
+            alert('Entry limit reached. Please purchase a subscription.');
+            return;
+        }
+        setFormToEdit(null);
+    }
+    setView('form_editor');
   };
   
   const openDeleteModal = (form: FormData) => {
-    setSelectedForm(form);
+    setFormToDelete(form);
     setIsDeleteModalOpen(true);
   };
 
   const handleDeleteForm = () => {
-    if (selectedForm) {
-      const updatedForm = { ...selectedForm, deleted: true };
+    if (formToDelete) {
+      const updatedForm = { ...formToDelete, deleted: true };
+      
       const userToUpdate = { ...user };
-      if (!selectedForm.deletedCounted) {
-          updatedForm.deletedCounted = true;
+      // Count entry on deletion only if it hasn't been counted on approval yet
+      if (!formToDelete.entryCounted) {
+          updatedForm.entryCounted = true;
           if (userToUpdate.subscription.allowedEntries !== 'infinity') {
             userToUpdate.subscription.entriesUsed += 1;
           }
@@ -69,141 +82,105 @@ const FirmDashboard = ({ user, onLogout, refreshUser }: FirmDashboardProps) => {
       fetchForms();
       refreshUser();
       setIsDeleteModalOpen(false);
-      setSelectedForm(null);
+      setFormToDelete(null);
     }
   };
 
   const filteredForms = useMemo(() => {
     if (!searchTerm) return forms;
-    const lowercasedTerm = searchTerm.toLowerCase();
     return forms.filter(form => 
-        form.location.toLowerCase().includes(lowercasedTerm) ||
-        form.firmName.toLowerCase().includes(lowercasedTerm) ||
-        (form.firmFeesRange || '').toLowerCase().includes(lowercasedTerm) ||
-        (form.adminFeesRange || '').toLowerCase().includes(lowercasedTerm) ||
-        form.adminCode.join(', ').toLowerCase().includes(lowercasedTerm) ||
-        new Date(form.expectedDate).toLocaleDateString().includes(searchTerm)
+        form.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        form.adminCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (form.studentSubmission?.studentName || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [forms, searchTerm]);
 
-  // --- View Rendering Logic ---
-  
-  if (view === 'profile') {
-    return <ProfilePage user={user} onBack={() => setView('dashboard')} onNavigate={setView} />
+  if (view === 'form_editor') {
+    return <AuditForm user={user} onSuccess={handleFormSuccess} onCancel={() => { setView('dashboard'); setFormToEdit(null); }} initialData={formToEdit || undefined} />;
   }
 
   if (view === 'manage_subscription') {
-    return <ManageSubscription user={user} refreshUser={refreshUser} onBack={() => setView('profile')} />;
-  }
-  
-  if (view === 'create_form' || view === 'edit_form') {
-    return <AuditForm user={user} onFormSaved={handleFormSaved} onCancel={() => setView('dashboard')} existingForm={selectedForm} />;
+      return <ManageSubscription user={user} refreshUser={refreshUser} onBack={() => setView('dashboard')} />;
   }
 
   return (
-    <DashboardLayout user={user} onLogout={onLogout} onNavigateToProfile={() => setView('profile')}>
-      <div className="card">
-        <div className="page-header">
-            <h2 className="card-title">Welcome back, {user.name}!</h2>
-            <button
-                onClick={() => canCreateForm ? setView('create_form') : alert('Entry limit reached. Please purchase a subscription.')}
-                disabled={!canCreateForm}
-                className="btn btn-firm btn-icon"
-            >
-                <PlusIcon />
-                <span>{canCreateForm ? 'Create New Form' : 'Limit Reached'}</span>
-            </button>
-        </div>
-        <p className="text-gray-600 mt-1">Here's an overview of your audit forms.</p>
-      </div>
+    <DashboardLayout user={user} onLogout={onLogout}>
+        <div className="card">
+            <div className="dashboard-header-bar">
+                <div className="dashboard-header-bar-left">
+                    <h2 className="dashboard-title">My Audit Forms</h2>
+                    <p className="dashboard-subtitle">
+                        Entries left: <span className={`entries-count ${entriesLeft === 'Unlimited' || (typeof entriesLeft === 'number' && entriesLeft > 10) ? 'green' : 'red'}`}>{entriesLeft}</span>
+                    </p>
+                </div>
+                <div className="dashboard-header-bar-right">
+                    <button onClick={() => setView('manage_subscription')} className="manage-subscription-button">Manage Subscription</button>
+                    <button onClick={() => openFormEditor()} disabled={!canCreateForm} className={`create-button ${roleClass}`} title={!canCreateForm ? 'Entry limit reached' : 'Create new audit form'}>
+                        <PlusIcon className="icon" /> Create Form
+                    </button>
+                </div>
+            </div>
 
-      <div className="card" style={{marginTop: '1.5rem'}}>
-        <div className="page-header">
-            {filteredForms.length > 0 && <h3 className="card-title">My Audit Forms</h3>}
-            <input 
-              type="text"
-              placeholder="Search forms..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="form-input"
-              style={{maxWidth: '320px'}}
-            />
-        </div>
-        <div className="table-container">
-          <table className="table">
-              <thead>
-                  <tr>
-                      <th>Date</th>
-                      <th>Location</th>
-                      <th>Payment</th>
-                      <th>Reminder</th>
-                      <th>Status</th>
-                      <th style={{textAlign: 'right'}}>Actions</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  {filteredForms.length > 0 ? filteredForms.map(form => (
-                      <tr key={form.id}>
-                          <td>{new Date(form.expectedDate).toLocaleDateString()}</td>
-                          <td>{form.location}</td>
-                          <td className="capitalize">{form.paymentTerm.replace('_', ' ')}</td>
-                          <td>
-                              <span className={`status-badge ${form.paymentReminder ? 'status-badge-on' : 'status-badge-off'}`}>
-                                  {form.paymentReminder ? 'On' : 'Off'}
-                              </span>
-                          </td>
-                          <td>
-                             <span className={`status-badge ${form.isApproved ? 'status-badge-approved' : 'status-badge-pending'}`}>
-                                 {form.isApproved ? 'Approved' : 'Pending'}
-                             </span>
-                          </td>
-                          <td style={{textAlign: 'right'}}>
-                              <button onClick={() => openDetailModal(form)} className="table-action-link view">View</button>
-                              <button onClick={() => openDeleteModal(form)} className="table-action-link delete">Delete</button>
-                          </td>
-                      </tr>
-                  )) : (
-                      <tr>
-                          <td colSpan={6} className="text-center" style={{padding: '2.5rem'}}>No forms found.</td>
-                      </tr>
-                  )}
-              </tbody>
-          </table>
-        </div>
-      </div>
-      
-      {/* Detail Modal */}
-      <Modal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} title="Form Details">
-          {selectedForm && (
-              <div style={{fontSize: '0.875rem', lineHeight: '1.5'}}>
-                  <p><strong>Firm Name:</strong> {selectedForm.firmName}</p>
-                  <p><strong>Location:</strong> {selectedForm.location}</p>
-                  <p><strong>Expected Date:</strong> {new Date(selectedForm.expectedDate).toLocaleDateString()}</p>
-                  <p><strong>Admin Code(s):</strong> {selectedForm.adminCode.join(', ')}</p>
-                  <p><strong>Fees (Your entry):</strong> {selectedForm.firmFeesRange}</p>
-                  <p><strong>Admin Edited Fees:</strong> {selectedForm.adminFeesRange ?? 'Not set'}</p>
-                  <p><strong>Payment Term:</strong> <span className="capitalize">{selectedForm.paymentTerm.replace('_', ' ')}</span></p>
-                  <p><strong>Reminder:</strong> {selectedForm.paymentReminder ? 'Yes' : 'No'}</p>
-                  <p><strong>Status:</strong> {selectedForm.isApproved ? 'Approved by Admin' : 'Pending Approval'}</p>
-                  {selectedForm.studentSubmission && <div style={{paddingTop: '0.5rem', marginTop: '0.5rem', borderTop: '1px solid var(--color-border)'}}>
-                      <h4 className="font-semibold">Student Submission</h4>
-                      <p><strong>Student:</strong> {selectedForm.studentSubmission.studentName}</p>
-                      <p><strong>Remarks:</strong> {selectedForm.studentSubmission.remarks}</p>
-                      <p><strong>Submitted At:</strong> {new Date(selectedForm.studentSubmission.submittedAt).toLocaleString()}</p>
-                  </div>}
-              </div>
-          )}
-      </Modal>
+            <div className="table-header">
+                <input 
+                    type="text"
+                    placeholder="Search by location, admin code, student..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="table-search-input firm"
+                />
+            </div>
 
-      {/* Delete Confirmation Modal */}
-      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirm Deletion">
-          <p>Are you sure you want to delete this form? This action cannot be undone. This will count towards your free entry limit.</p>
-          <div style={{marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem'}}>
-              <button onClick={() => setIsDeleteModalOpen(false)} className="btn btn-secondary" style={{width: 'auto'}}>Cancel</button>
-              <button onClick={handleDeleteForm} className="btn btn-danger" style={{width: 'auto'}}>Delete</button>
-          </div>
-      </Modal>
+            <div className="table-container">
+                <table className="data-table">
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Student</th>
+                            <th style={{textAlign: 'right'}}>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredForms.length > 0 ? filteredForms.map(form => (
+                            <tr key={form.id}>
+                                <td style={{fontWeight: 500}}>{form.location}</td>
+                                <td>{new Date(form.expectedDate).toLocaleDateString()}</td>
+                                <td>
+                                    <span className={`status-badge ${form.isApproved ? (form.studentSubmission ? 'green' : 'blue') : 'yellow'}`}>
+                                        {form.isApproved ? (form.studentSubmission ? 'Filled' : 'Approved') : 'Pending'}
+                                    </span>
+                                </td>
+                                <td>{form.studentSubmission?.studentName || 'N/A'}</td>
+                                <td style={{textAlign: 'right'}}>
+                                    <button onClick={() => onNavigate('form_details', { formId: form.id })} className="table-action-link view">View</button>
+                                    <button onClick={() => openFormEditor(form)} className="table-action-link edit" disabled={!!form.studentSubmission}>Edit</button>
+                                    <button onClick={() => openDeleteModal(form)} className="table-action-link delete">Delete</button>
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr>
+                                <td colSpan={5} className="no-data-cell">No forms found.</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirm Deletion">
+            <div>
+                <p>Are you sure you want to delete the form for audit at <strong>{formToDelete?.location}</strong>?</p>
+                <p>This action cannot be undone.</p>
+                <div className="form-actions" style={{marginTop: '1.5rem'}}>
+                    <button type="button" onClick={() => setIsDeleteModalOpen(false)} className="form-button cancel">Cancel</button>
+                    <button type="button" onClick={handleDeleteForm} className="form-button delete">Delete Form</button>
+                </div>
+            </div>
+        </Modal>
     </DashboardLayout>
   );
 };
+
 export default FirmDashboard;
