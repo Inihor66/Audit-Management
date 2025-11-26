@@ -1,241 +1,157 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Role, User } from '../types';
 import * as storage from '../services/storageService';
-import { User, Role } from '../types';
 
-// --- PASTE YOUR EMAILJS KEYS HERE ---
-// Get these from https://dashboard.emailjs.com/admin
-const DEFAULT_SERVICE_ID = 'YOUR_SERVICE_ID_HERE';  // Example: 'service_823...'
-const DEFAULT_TEMPLATE_ID = 'YOUR_TEMPLATE_ID_HERE'; // Example: 'template_321...'
-const DEFAULT_PUBLIC_KEY = 'YOUR_PUBLIC_KEY_HERE';  // Example: 'user_123...'
-
-interface VerifyEmailPageProps {
-    userId: string;
-    onNavigate: (page: string, options?: { role?: Role }) => void;
+interface SignUpProps {
+    onNavigate: (page: string, options?: { role?: Role; userId?: string; }) => void;
 }
 
-const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [verificationCodeInput, setVerificationCodeInput] = useState('');
-    const [isVerified, setIsVerified] = useState(false);
-    const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-    const [statusMessage, setStatusMessage] = useState('');
-    
-    // Config State
-    const [showConfig, setShowConfig] = useState(false);
-    const [config, setConfig] = useState({
-        serviceId: localStorage.getItem('emailjs_service_id') || (DEFAULT_SERVICE_ID !== 'YOUR_SERVICE_ID_HERE' ? DEFAULT_SERVICE_ID : ''),
-        templateId: localStorage.getItem('emailjs_template_id') || (DEFAULT_TEMPLATE_ID !== 'YOUR_TEMPLATE_ID_HERE' ? DEFAULT_TEMPLATE_ID : ''),
-        publicKey: localStorage.getItem('emailjs_public_key') || (DEFAULT_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY_HERE' ? DEFAULT_PUBLIC_KEY : ''),
+const SignUp = ({ onNavigate }: SignUpProps) => {
+    // Form data state
+    const [role, setRole] = useState<Role>(Role.FIRM);
+    const [formData, setFormData] = useState({
+        name: '',
+        location: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        phone: '',
+        aadhar: '',
+        adminCode: '',
     });
+    
+    // Error state
+    const [error, setError] = useState('');
 
-    useEffect(() => {
-        const foundUser = storage.getUserById(userId);
-        if (foundUser) {
-            setUser(foundUser);
-            if (foundUser.isVerified) {
-                setIsVerified(true);
-            } else {
-                // If we have keys, try to send automatically
-                if (config.serviceId && config.templateId && config.publicKey) {
-                    sendEmail(foundUser, foundUser.verificationCode || 'ERROR');
-                } else {
-                    setStatus('idle');
-                    setStatusMessage('Please configure EmailJS keys below to send actual emails.');
-                    setShowConfig(true);
-                }
-            }
-        } else {
-            setStatus('error');
-            setStatusMessage('User not found. Please sign up again.');
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userId]);
-
-    const saveConfig = (newConfig: typeof config) => {
-        localStorage.setItem('emailjs_service_id', newConfig.serviceId);
-        localStorage.setItem('emailjs_template_id', newConfig.templateId);
-        localStorage.setItem('emailjs_public_key', newConfig.publicKey);
-        setConfig(newConfig);
-        setShowConfig(false);
-        if (user) {
-            sendEmail(user, user.verificationCode || 'ERROR');
-        }
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const sendEmail = async (currentUser: User, code: string) => {
-        if (!config.serviceId || !config.templateId || !config.publicKey) {
-            setStatus('error');
-            setStatusMessage('Missing EmailJS Configuration. Please set keys below.');
-            setShowConfig(true);
+    // Handle form submission
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        // Basic validation
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match.');
             return;
         }
-
-        setStatus('sending');
-        setStatusMessage('Sending verification email...');
-
+        if (role === Role.ADMIN && (!formData.adminCode || formData.adminCode.trim().length === 0)) {
+            setError('Admin Code is required.');
+            return;
+        }
+        
         try {
-            const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    service_id: config.serviceId,
-                    template_id: config.templateId,
-                    user_id: config.publicKey,
-                    template_params: {
-                        to_email: currentUser.email,
-                        to_name: currentUser.name,
-                        verification_code: code,
-                        message: `Your verification code is: ${code}`
-                    }
-                }),
-            });
+            // Create the user
+            const newUserPayload = {
+                role,
+                name: formData.name,
+                email: formData.email,
+                passwordHash: formData.password, // Storing plain text for simulation
+                ...(role !== Role.STUDENT && { location: formData.location }),
+                ...(role === Role.STUDENT && { phone: formData.phone, aadhar: formData.aadhar }),
+                ...(role === Role.ADMIN && { adminCode: formData.adminCode }),
+            };
+            const newUser = storage.addUser(newUserPayload);
+            
+            // Navigate to verification page instead of logging in
+            onNavigate('verify_email', { userId: newUser.id });
 
-            if (response.ok) {
-                setStatus('success');
-                setStatusMessage(`Verification code sent to ${currentUser.email}`);
-            } else {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Failed to send email');
-            }
         } catch (err) {
-            console.error('Email Send Error:', err);
-            setStatus('error');
-            setStatusMessage('Failed to send email. Check your keys or network connection.');
-            setShowConfig(true); // Show config on error to allow fixing keys
+            // The addUser function throws an error if user or admin code exists
+            setError(err instanceof Error ? err.message : 'An unknown error occurred.');
         }
     };
 
-    const handleVerify = () => {
-        if (user && user.verificationCode) {
-            if (verificationCodeInput === user.verificationCode) {
-                const updatedUser = { ...user, isVerified: true, verificationCode: undefined };
-                storage.updateUser(updatedUser);
-                setIsVerified(true);
-            } else {
-                setStatus('error');
-                setStatusMessage('Invalid code. Please try again.');
-            }
-        }
-    };
-
-    const handleResend = () => {
-        if (user) sendEmail(user, user.verificationCode || 'ERROR');
-    };
-
-    if (!user) return <div className="loading-screen"><p>Loading...</p></div>;
-
+    // Render the single sign-up form
     return (
         <div className="auth-page">
-            <div className="auth-form-card" style={{maxWidth: '36rem', margin: '0 auto', textAlign: 'center'}}>
-                <h2 className="auth-title">Verify Your Email</h2>
-                
-                {isVerified ? (
-                    <div style={{marginTop: '2rem'}}>
-                        <div style={{ margin: '0 auto 1.5rem', color: 'var(--admin-color)', width: '4rem' }}>
-                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                             </svg>
+            <div className="auth-container">
+                <h2 className="auth-title">Create your account</h2>
+            </div>
+
+            <div className="auth-form-container">
+                <div className="auth-form-card">
+                    <form className="auth-form" onSubmit={handleFormSubmit}>
+                        <div className="form-group">
+                            <label htmlFor="role" className="form-label">I am a...</label>
+                            <select id="role" name="role" value={role} onChange={(e) => setRole(e.target.value as Role)} className="form-select">
+                                <option value={Role.FIRM}>Firm</option>
+                                <option value={Role.STUDENT}>Student</option>
+                                <option value={Role.ADMIN}>Admin</option>
+                            </select>
                         </div>
-                        <p style={{fontSize: '1.25rem', fontWeight: 600, color: 'var(--gray-800)'}}>Verified Successfully!</p>
-                        <button
-                            onClick={() => onNavigate('login', { role: user.role })}
-                            className={`submit-button ${user.role.toLowerCase()}`}
-                            style={{marginTop: '1.5rem'}}
-                        >
-                            Continue to Login
+
+                        <div className="form-group">
+                            <label htmlFor="name" className="form-label">{role === Role.FIRM ? 'Firm Name' : 'Full Name'}</label>
+                            <input id="name" name="name" type="text" value={formData.name} required onChange={handleInputChange} className="form-input" />
+                        </div>
+                        
+                        {(role === Role.FIRM || role === Role.ADMIN) && (
+                            <div className="form-group">
+                                <label htmlFor="location" className="form-label">Location</label>
+                                <input id="location" name="location" type="text" value={formData.location} required onChange={handleInputChange} className="form-input" />
+                            </div>
+                        )}
+                        
+                        {role === Role.ADMIN && (
+                            <div className="form-group">
+                                <label htmlFor="adminCode" className="form-label">Unique Admin Code</label>
+                                <input id="adminCode" name="adminCode" type="text" value={formData.adminCode} required placeholder="e.g., MYCODE123" onChange={handleInputChange} className="form-input" />
+                                <p className="form-input-description">This code will be shared with firms to link them to your dashboard. It must be unique.</p>
+                            </div>
+                        )}
+
+                        {role === Role.STUDENT && (
+                            <>
+                                <div className="form-group">
+                                    <label htmlFor="phone" className="form-label">Phone Number</label>
+                                    <input id="phone" name="phone" type="tel" value={formData.phone} required onChange={handleInputChange} className="form-input" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="aadhar" className="form-label">Aadhar Number</label>
+                                    <input id="aadhar" name="aadhar" type="text" value={formData.aadhar} required onChange={handleInputChange} className="form-input" />
+                                </div>
+                            </>
+                        )}
+                        
+                        <div className="form-group">
+                            <label htmlFor="email" className="form-label">Email address</label>
+                            <input id="email" name="email" type="email" value={formData.email} required onChange={handleInputChange} className="form-input" />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="password" className="form-label">Password</label>
+                            <input id="password" name="password" type="password" value={formData.password} required onChange={handleInputChange} className="form-input" />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
+                            <input id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} required onChange={handleInputChange} className="form-input" />
+                        </div>
+
+                        {error && <p className="error-message">{error}</p>}
+
+                        <div>
+                            <button type="submit" className={`submit-button ${role.toLowerCase()}`}>
+                                Create Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <div className="auth-footer">
+                        <button onClick={() => onNavigate('login', { role })} className="auth-footer-link" style={{marginTop: '1rem'}}>
+                            Already have an account? Log in
+                        </button>
+                        <button onClick={() => onNavigate('welcome')} className="auth-footer-link">
+                            Back to role selection
                         </button>
                     </div>
-                ) : (
-                    <>
-                        <p style={{color: 'var(--gray-600)', marginTop: '1rem'}}>
-                            Enter the code sent to <strong>{user.email}</strong>
-                        </p>
-
-                        <div style={{marginTop: '2rem'}}>
-                             <input
-                                type="text"
-                                value={verificationCodeInput}
-                                onChange={(e) => setVerificationCodeInput(e.target.value)}
-                                className="form-input"
-                                style={{textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5em', fontWeight: 'bold', maxWidth: '12rem', margin: '0 auto'}}
-                                maxLength={6}
-                                placeholder="000000"
-                           />
-                           <button onClick={handleVerify} className={`submit-button ${user.role.toLowerCase()}`} style={{marginTop: '1rem'}}>
-                                Verify Code
-                           </button>
-                        </div>
-
-                        {/* Status Message Area */}
-                        {(statusMessage || status !== 'idle') && (
-                            <div style={{
-                                marginTop: '1.5rem', 
-                                padding: '1rem', 
-                                borderRadius: '0.5rem',
-                                backgroundColor: status === 'error' ? '#fee2e2' : status === 'success' ? '#dcfce7' : '#f3f4f6',
-                                color: status === 'error' ? '#b91c1c' : status === 'success' ? '#15803d' : '#4b5563'
-                            }}>
-                                {statusMessage}
-                            </div>
-                        )}
-
-                        <div style={{marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem'}}>
-                            <button onClick={handleResend} style={{color: 'var(--indigo-600)', textDecoration: 'underline'}} disabled={status === 'sending'}>
-                                Resend Email
-                            </button>
-                            <button onClick={() => setShowConfig(!showConfig)} style={{color: 'var(--gray-500)', fontSize: '0.875rem'}}>
-                                {showConfig ? 'Hide Config' : 'Configure Email Provider'}
-                            </button>
-                        </div>
-
-                        {/* Runtime Configuration Form */}
-                        {showConfig && (
-                            <div style={{marginTop: '1.5rem', padding: '1.5rem', border: '1px solid var(--gray-300)', borderRadius: '0.5rem', backgroundColor: 'var(--gray-50)', textAlign: 'left'}}>
-                                <h4 style={{margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600}}>EmailJS Configuration</h4>
-                                <p style={{fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '1rem'}}>
-                                    Enter your public keys from <a href="https://dashboard.emailjs.com/" target="_blank" rel="noreferrer">EmailJS Dashboard</a> to enable sending on this deployment.
-                                </p>
-                                <div className="form-group" style={{marginBottom: '0.75rem'}}>
-                                    <label className="form-label">Service ID</label>
-                                    <input 
-                                        type="text" 
-                                        className="form-input" 
-                                        value={config.serviceId} 
-                                        onChange={(e) => setConfig({...config, serviceId: e.target.value})}
-                                        placeholder="service_xxxxx"
-                                    />
-                                </div>
-                                <div className="form-group" style={{marginBottom: '0.75rem'}}>
-                                    <label className="form-label">Template ID</label>
-                                    <input 
-                                        type="text" 
-                                        className="form-input" 
-                                        value={config.templateId} 
-                                        onChange={(e) => setConfig({...config, templateId: e.target.value})}
-                                        placeholder="template_xxxxx"
-                                    />
-                                </div>
-                                <div className="form-group" style={{marginBottom: '1rem'}}>
-                                    <label className="form-label">Public Key</label>
-                                    <input 
-                                        type="text" 
-                                        className="form-input" 
-                                        value={config.publicKey} 
-                                        onChange={(e) => setConfig({...config, publicKey: e.target.value})}
-                                        placeholder="user_xxxxx"
-                                    />
-                                </div>
-                                <button onClick={() => saveConfig(config)} className="submit-button admin">
-                                    Save & Send Email
-                                </button>
-                            </div>
-                        )}
-                    </>
-                )}
+                </div>
             </div>
         </div>
     );
 };
-
-export default VerifyEmailPage;
+export default SignUp;
