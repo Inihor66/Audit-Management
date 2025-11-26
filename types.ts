@@ -1,3 +1,4 @@
+
 export enum Role {
   FIRM = 'FIRM',
   STUDENT = 'STUDENT',
@@ -19,20 +20,15 @@ export interface User {
   name: string;
   email: string;
   passwordHash: string; // Storing plain password in localStorage is insecure, this is a simulation
+  isVerified: boolean; // Email verification status
+  verificationCode?: string; // 6-digit code for verification
   location?: string;
   phone?: string;
   aadhar?: string;
-  adminCode?: string; // Unique code for admins
+  adminCode?: string; // Unique code for admins to link with firms
   subscription: Subscription;
   pendingPaymentSS: string | null; // Data URL of the screenshot
   notifications: Notification[];
-
-  // Email verification
-  emailVerified?: boolean;
-  emailVerification?: {
-    code: string;
-    expiresAt: string; // ISO string
-  } | null;
 }
 
 export interface Notification {
@@ -47,9 +43,9 @@ export interface StudentSubmission {
   studentId: string;
   studentName: string;
   studentEmail: string;
-  studentPhone?: string;
-  studentAadhar?: string;
-  remarks?: string;
+  phone?: string;
+  aadhar?: string;
+  remarks: string;
   submittedAt: string;
 }
 
@@ -59,19 +55,20 @@ export interface FormData {
   firmName: string;
   location: string;
   expectedDate: string;
-  adminCode: string[]; // Can be sent to multiple admins
-  // Fees entered by the firm (pre-edit) and fees edited by admin (post-edit)
-  firmFeesRange: string;
-  adminFeesRange?: string | null;
+  adminCode: string;
+  feesRange: string; // Pre-edit payment
+  postEditFees: string | null; // Post-edit payment, set by admin
   paymentTerm: '15_days' | '30_days' | '45_days' | 'advance';
+  preEditTerms: string; // Pre-edit Terms & Conditions, set by firm
+  postEditTerms: string | null; // Post-edit T&C, set by admin
   paymentReminder: boolean;
+  reminderNotified: boolean; // Tracks if a payment reminder has been issued
   isApproved: boolean;
   finalFees: number | null;
   studentSubmission: StudentSubmission | null;
   createdAt: string;
-  updatedAt?: string;
   deleted: boolean;
-  deletedCounted: boolean; // To ensure a deleted form is only counted once towards the limit
+  entryCounted: boolean; // Replaces deletedCounted
 }
 
 export interface AdminNotification {
