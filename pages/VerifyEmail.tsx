@@ -6,9 +6,9 @@ import { User, Role } from '../types';
 // --- CONFIGURATION: PASTE YOUR EMAILJS KEYS HERE ---
 // API KEY, SERVICE ID, aur TEMPLATE ID yahan insert karein.
 // Get these from https://dashboard.emailjs.com/admin
-const DEFAULT_SERVICE_ID = 'YOUR_SERVICE_ID_HERE';  // Example: 'service_823...'
-const DEFAULT_TEMPLATE_ID = 'YOUR_TEMPLATE_ID_HERE'; // Example: 'template_321...'
-const DEFAULT_PUBLIC_KEY = 'YOUR_PUBLIC_KEY_HERE';  // Example: 'user_123...'
+const DEFAULT_SERVICE_ID = 'service_6gek9hs';  // Example: 'service_823...'
+const DEFAULT_TEMPLATE_ID = 'template_j1jaezf'; // Example: 'template_321...'
+const DEFAULT_PUBLIC_KEY = 'WPvTVBEQwlGTWJFZq';  // Example: 'user_123...'
 // --------------------------------------------------
 
 interface VerifyEmailPageProps {
