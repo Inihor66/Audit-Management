@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { User, SubscriptionPlan, Role } from '../../types';
 import { SUBSCRIPTION_PLANS, CONTACT_INFO, ROLE_CONFIG } from '../../constants';
 import * as storage from '../../services/storageService';
 import { WhatsAppIcon } from '../../components/icons/WhatsAppIcon';
+import { CheckIcon } from '../../components/icons/CheckIcon';
 
 interface ManageSubscriptionProps {
     user: User;
@@ -10,19 +12,11 @@ interface ManageSubscriptionProps {
     onBack: () => void;
 }
 
-const getRoleButtonClass = (role: Role) => {
-    switch (role) {
-        case Role.FIRM: return 'btn-firm';
-        case Role.ADMIN: return 'btn-admin';
-        default: return 'btn-secondary';
-    }
-}
-
 const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: SubscriptionPlan, user: User, onPaymentNotified: () => void, onBack: () => void }) => {
     const [screenshot, setScreenshot] = useState<string | null>(null);
     const [error, setError] = useState('');
     const [notified, setNotified] = useState(false);
-    const roleButtonClass = getRoleButtonClass(user.role);
+    const roleClass = user.role.toLowerCase();
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -44,140 +38,159 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: Subscrip
             setError('Please upload a payment screenshot.');
             return;
         }
+
+        // Admin users can auto-approve their own subscriptions.
+        if (user.role === Role.ADMIN) {
+            const startDate = new Date();
+            const expiryDate = new Date();
+            expiryDate.setMonth(startDate.getMonth() + plan.duration_months);
+
+            const updatedUser = {
+                ...user,
+                subscription: {
+                    ...user.subscription,
+                    status: 'active' as 'active',
+                    plan: plan.key,
+                    startDate: startDate.toISOString(),
+                    expiryDate: expiryDate.toISOString(),
+                    allowedEntries: 'infinity' as 'infinity',
+                },
+                pendingPaymentSS: null,
+            };
+            storage.updateUser(updatedUser);
+            alert(`Admin subscription for the ${plan.name} plan has been activated!`);
+            onPaymentNotified();
+            return;
+        }
         
-        const updatedUser = { ...user, pendingPaymentSS: screenshot };
+        // Default flow for Firms: notify admin for manual approval.
+        const updatedUser = { 
+            ...user, 
+            pendingPaymentSS: screenshot,
+            subscription: { ...user.subscription, status: 'pending' as 'pending' }
+        };
         storage.updateUser(updatedUser);
+        
+        // Create admin notification
         storage.addAdminNotification(user, screenshot);
+
         setNotified(true);
     };
 
     if (notified) {
         return (
-             <div className="card text-center">
-                <h3 style={{color: 'var(--color-success)', fontSize: '1.25rem', fontWeight: '700'}}>Screenshot Uploaded!</h3>
-                <p style={{marginTop: '0.5rem'}}>The admin has been notified and will confirm your subscription manually. You will receive an in-app notification upon confirmation.</p>
-                <button onClick={onPaymentNotified} className="btn" style={{backgroundColor: 'var(--color-success)', marginTop: '1.5rem', width: 'auto'}}>Go Back</button>
+             <div className="payment-notified-container">
+                <h3 className="payment-notified-title">Screenshot Uploaded!</h3>
+                <p className="payment-notified-text">The admin has been notified and will confirm your subscription manually. You will receive an in-app notification upon confirmation.</p>
+                <button onClick={onPaymentNotified} className="payment-notified-button">Go to Dashboard</button>
              </div>
         );
     }
 
     return (
-        <div className="space-y-6">
-            <button onClick={onBack} className="header-action-btn">&larr; Back to plans</button>
-            <h2 className="card-title">Complete Your Subscription</h2>
-            <p>You have selected the <strong className="font-semibold">{plan.name}</strong> plan for <strong className="font-semibold">₹{plan.price}</strong>.</p>
+        <div className="payment-flow">
+            <button onClick={onBack} className={`back-link ${roleClass}`}>&larr; Back to plans</button>
+            <h2 className="payment-flow-title">Complete Your Subscription</h2>
+            <p className="payment-flow-subtitle">You have selected the <strong style={{fontWeight: 600}}>{plan.name}</strong> plan for <strong style={{fontWeight: 600}}>₹{plan.price}</strong>.</p>
             
-            <div className="card">
-                <h3 className="card-title" style={{fontSize: '1.125rem'}}>Step 1: Make Payment</h3>
-                <p>Please pay the subscription amount to the following UPI ID:</p>
+            <div className="payment-step">
+                <h3 className="payment-step-title">Step 1: Make Payment</h3>
+                <p className="payment-step-text">Please pay the subscription amount to the following UPI ID:</p>
                 <p className="upi-id">{CONTACT_INFO.upi}</p>
                 <div className="payment-actions">
-                    <button onClick={() => window.open(`upi://pay?pa=${CONTACT_INFO.upi}&pn=AuditFlow&am=${plan.price}`, '_blank')} className={`btn ${roleButtonClass}`}>Open UPI App</button>
-                    <a href={CONTACT_INFO.whatsapp} target="_blank" rel="noopener noreferrer" className="btn" style={{backgroundColor: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                        <WhatsAppIcon className="w-5 h-5" />
-                        <span>Help</span>
+                    <button onClick={() => window.open(`upi://pay?pa=${CONTACT_INFO.upi}&pn=AuditFlow&am=${plan.price}`, '_blank')} className="payment-action-button upi">Open UPI App</button>
+                    <a href={CONTACT_INFO.whatsapp} target="_blank" rel="noopener noreferrer" className="payment-action-button whatsapp" aria-label="Contact on WhatsApp">
+                        <WhatsAppIcon className="icon" />
                     </a>
                 </div>
             </div>
 
-            <div className="card">
-                <h3 className="card-title" style={{fontSize: '1.125rem'}}>Step 2: Upload Payment Screenshot</h3>
-                <p className="mb-4">After successful payment, upload a screenshot to verify.</p>
-                <input type="file" accept="image/*" onChange={handleFileChange} className="form-input" />
+            <div className="payment-step">
+                <h3 className="payment-step-title">Step 2: Upload Payment Screenshot</h3>
+                <p className="payment-step-text">After successful payment, upload a screenshot to verify.</p>
+                <input type="file" accept="image/*" onChange={handleFileChange} className="file-input"/>
                 {screenshot && <img src={screenshot} alt="Payment screenshot preview" className="screenshot-preview" />}
-                {error && <p className="form-error">{error}</p>}
+                {error && <p className="error-message" style={{marginTop: '0.5rem'}}>{error}</p>}
             </div>
 
-            <div style={{display: 'flex', justifyContent: 'flex-end'}}>
-                <button onClick={handleNotifyAdmin} disabled={!screenshot} className={`btn ${roleButtonClass}`}>
-                    Notify Admin
+            <div className="notify-admin-button-container">
+                <button 
+                    onClick={handleNotifyAdmin} 
+                    disabled={!screenshot} 
+                    className="notify-admin-button">
+                    {user.role === Role.ADMIN ? 'Activate Subscription' : 'Notify Admin'}
                 </button>
             </div>
-             {/* Fix: Removed 'jsx' prop from style tag to resolve TypeScript error. */}
-             <style>{`
-                .upi-id { font-family: monospace; background-color: #e5e7eb; padding: 0.75rem; border-radius: 0.375rem; margin: 1rem 0; text-align: center; }
-                .payment-actions { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
-                .payment-actions .btn { width: auto; }
-                .screenshot-preview { margin-top: 1rem; max-height: 15rem; border-radius: 0.375rem; border: 1px solid var(--color-border); }
-             `}</style>
         </div>
     );
 };
 
 const ManageSubscription = ({ user, refreshUser, onBack }: ManageSubscriptionProps) => {
     const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-    const roleButtonClass = getRoleButtonClass(user.role);
-
-    const PageWrapper = ({children}: {children: React.ReactNode}) => (
-        <div className="container" style={{maxWidth: '64rem', paddingTop: '2rem'}}>
-            {children}
-        </div>
-    );
-
 
     if (selectedPlan) {
-        return <PageWrapper><PaymentFlow plan={selectedPlan} user={user} onPaymentNotified={() => { refreshUser(); onBack(); }} onBack={() => setSelectedPlan(null)} /></PageWrapper>;
+        return <PaymentFlow plan={selectedPlan} user={user} onPaymentNotified={() => { refreshUser(); onBack(); }} onBack={() => setSelectedPlan(null)} />;
     }
 
+    const roleClass = user.role.toLowerCase();
     const { subscription } = user;
 
     return (
-        <PageWrapper>
-            <div className="card">
-                <div className="page-header">
-                    <div>
-                        <h2 className="card-title">Manage Subscription</h2>
-                        <p className="text-gray-500 mt-1">Choose a plan that works for you.</p>
-                    </div>
-                    <button onClick={onBack} className="header-action-btn">&larr; Back to Profile</button>
+        <div className="subscription-page">
+            <div className="subscription-header-new">
+                <button onClick={onBack} className={`back-link ${roleClass}`}>&larr; Back to Dashboard</button>
+                <h1 className="subscription-title-new">Choose Your Plan</h1>
+                <p className="subscription-subtitle-new">Unlock unlimited potential and streamline your workflow.</p>
+            </div>
+
+            {subscription.status === 'active' && (
+                <div className="subscription-banner active">
+                     <p><strong>Current Plan:</strong> <span style={{textTransform: 'capitalize'}}>{subscription.plan?.replace('_', ' ')}</span> | <strong>Expires on:</strong> {subscription.expiryDate ? new Date(subscription.expiryDate).toLocaleDateString() : 'N/A'}</p>
                 </div>
+            )}
+             {subscription.status === 'pending' && (
+                <div className="subscription-banner pending">
+                    <p><strong>Payment Pending Confirmation:</strong> Your subscription is waiting for admin approval.</p>
+                </div>
+            )}
 
-                {subscription.status === 'active' && (
-                    <div className="notification success">
-                        <p><strong>Current Plan:</strong> {subscription.plan?.replace('_', ' ')}</p>
-                        <p><strong>Expires on:</strong> {subscription.expiryDate ? new Date(subscription.expiryDate).toLocaleDateString() : 'N/A'}</p>
-                    </div>
-                )}
-                 {user.pendingPaymentSS && (
-                    <div className="notification warning">
-                        <p><strong>Payment Pending Confirmation:</strong> Your subscription is waiting for admin approval.</p>
-                    </div>
-                )}
-
-                <div className="plans-grid">
-                    {SUBSCRIPTION_PLANS.map(plan => (
-                        <div key={plan.key} className="plan-card">
-                            <div>
-                                <h3>{plan.name}</h3>
-                                <p className="price">₹{plan.price}</p>
-                                <p className="description">Unlimited form entries for {plan.duration_months} month{plan.duration_months > 1 ? 's' : ''}.</p>
+            <div className="plans-container-new">
+                {SUBSCRIPTION_PLANS.map((plan) => {
+                    const isPopular = plan.key === 'six_month';
+                    return (
+                        <div key={plan.key} className={`plan-card-new ${isPopular ? 'popular' : ''}`}>
+                            {isPopular && <div className="popular-badge">Most Popular</div>}
+                            <div className="plan-header">
+                                <h2 className="plan-name-new">{plan.name}</h2>
+                                <p className="plan-price-new">
+                                    ₹{plan.price}
+                                    <span className="plan-duration">/ {plan.duration_months} month{plan.duration_months > 1 ? 's' : ''}</span>
+                                </p>
+                                <p className="plan-billing-info">Billed once for the duration.</p>
                             </div>
-                            <button onClick={() => setSelectedPlan(plan)} className={`btn ${roleButtonClass}`}>
+                            <div className="plan-features">
+                                <h3 className="features-title">What's included:</h3>
+                                <ul className="feature-list">
+                                    <li><CheckIcon className="feature-icon" /> Unlimited Form Entries</li>
+                                    <li><CheckIcon className="feature-icon" /> Access to All Features</li>
+                                    <li><CheckIcon className="feature-icon" /> Priority Support</li>
+                                </ul>
+                            </div>
+                            <button
+                                onClick={() => setSelectedPlan(plan)}
+                                className={`plan-button ${roleClass} ${isPopular ? 'popular-button' : ''}`}>
                                 Choose Plan
                             </button>
                         </div>
-                    ))}
-                </div>
-                <div className="free-plan-info">
-                    <h4 className="font-semibold text-gray-700">Free Plan</h4>
-                    <p>Your free plan includes <strong>{ROLE_CONFIG[user.role].freeEntries}</strong> form entries. Deleted forms are counted towards this limit.</p>
-                </div>
+                    );
+                })}
             </div>
-            {/* Fix: Removed 'jsx' prop from style tag to resolve TypeScript error. */}
-            <style>{`
-                .notification { padding: 1rem; margin-bottom: 1.5rem; border-left-width: 4px; border-radius: 0.25rem; }
-                .notification.success { background-color: #f0fdf4; color: #15803d; border-color: #4ade80; }
-                .notification.warning { background-color: #fffbeb; color: #b45309; border-color: #facc15; }
-                .plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; text-align: center; }
-                .plan-card { border: 1px solid var(--color-border); border-radius: 0.5rem; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s; }
-                .plan-card:hover { box-shadow: var(--shadow-lg); border-color: var(--color-firm); }
-                .plan-card h3 { font-size: 1.25rem; font-weight: 600; }
-                .plan-card .price { font-size: 1.875rem; font-weight: 700; margin: 1rem 0; }
-                .plan-card .description { color: var(--color-text-light); }
-                .plan-card .btn { margin-top: 1.5rem; }
-                .free-plan-info { margin-top: 2rem; padding: 1rem; background-color: var(--color-bg-light); border-radius: 0.5rem; text-align: center; }
-            `}</style>
-        </PageWrapper>
+            
+            <div className="free-plan-info-new">
+                <h4>Continue with Free Plan</h4>
+                <p>Your free plan includes <strong>{ROLE_CONFIG[user.role].freeEntries}</strong> form entries. Great for getting started!</p>
+            </div>
+        </div>
     );
 };
 
