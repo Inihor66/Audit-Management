@@ -1,189 +1,167 @@
-import React, { useState } from "react";
-import { Role } from "../types";
-import * as storage from "../services/storageService";
-import { ROLE_CONFIG } from "../constants";
+import React, { useState } from 'react';
+import { Role, User } from '../types';
+import * as storage from '../services/storageService';
 
 interface SignUpProps {
-  onSignUp?: (user: any) => void;
-  onNavigate?: (page: string, role?: Role) => void;
-  role?: Role;
+    onNavigate: (page: string, options?: { role?: Role; userId?: string; }) => void;
 }
 
-const SignUp = ({ onSignUp = () => {}, onNavigate = () => {}, role: initialRole }: SignUpProps) => {
-  const [role, setRole] = useState<Role>(initialRole || Role.FIRM);
+const SignUp = ({ onNavigate }: SignUpProps) => {
+    // Form data state
+    const [role, setRole] = useState<Role>(Role.FIRM);
+    const [formData, setFormData] = useState({
+        name: '',
+        location: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        phone: '',
+        aadhar: '',
+        adminCode: '',
+    });
+    
+    // Error state
+    const [error, setError] = useState('');
 
-  const [formData, setFormData] = useState({
-    name: "",
-    location: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    phone: "",
-    aadhar: "",
-    adminCode: "",
-  });
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+    // Handle form submission
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setRole(Role[e.target.value]);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const payload: any = {
-        role,
-        name: formData.name,
-        email: formData.email,
-        passwordHash: formData.password,
-        ...(role !== Role.STUDENT && { location: formData.location }),
-        ...(role === Role.STUDENT && {
-          phone: formData.phone,
-          aadhar: formData.aadhar,
-        }),
-        ...(role === Role.ADMIN && { adminCode: formData.adminCode }),
-      };
-
-      const newUser = storage.addUser(payload);
-
-      if (role === Role.FIRM || role === Role.ADMIN) {
-        const sent = await storage.generateEmailVerificationCode(newUser.id);
-
-        if (!sent) {
-          setError("Failed to send verification email.");
-          setLoading(false);
-          return;
+        // Basic validation
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match.');
+            return;
         }
+        if (role === Role.ADMIN && (!formData.adminCode || formData.adminCode.trim().length === 0)) {
+            setError('Admin Code is required.');
+            return;
+        }
+        
+        try {
+            // Create the user
+            const newUserPayload = {
+                role,
+                name: formData.name,
+                email: formData.email,
+                passwordHash: formData.password, // Storing plain text for simulation
+                ...(role !== Role.STUDENT && { location: formData.location }),
+                ...(role === Role.STUDENT && { phone: formData.phone, aadhar: formData.aadhar }),
+                ...(role === Role.ADMIN && { adminCode: formData.adminCode }),
+            };
+            const newUser = storage.addUser(newUserPayload);
+            
+            // Navigate to verification page instead of logging in
+            onNavigate('verify_email', { userId: newUser.id });
 
-        sessionStorage.setItem("pendingVerificationUserId", newUser.id);
-        sessionStorage.setItem("pendingVerificationRole", role.toString());
+        } catch (err) {
+            // The addUser function throws an error if user or admin code exists
+            setError(err instanceof Error ? err.message : 'An unknown error occurred. Please try again.');
+            console.error("Signup Error:", err);
+            // Scroll to top to see error if needed
+            window.scrollTo(0,0);
+        }
+    };
 
-        onNavigate("verify");
-        setLoading(false);
-        return;
-      }
-
-      onSignUp(newUser);
-      setLoading(false);
-    } catch (err) {
-      setError("Something went wrong.");
-      setLoading(false);
-    }
-  };
-
-  const config = ROLE_CONFIG[role];
-
-  const getRoleButtonClass = () => {
-    switch (role) {
-      case Role.FIRM: return "btn-firm";
-      case Role.STUDENT: return "btn-student";
-      case Role.ADMIN: return "btn-admin";
-      default: return "";
-    }
-  };
-
-  return (
-    <div className="page-center">
-      <form onSubmit={handleSubmit} className="auth-form-card">
-        <h2>Create your account</h2>
-
-        {/* Role Change */}
-        <div className="form-group">
-          <label>I am a...</label>
-          <select value={Role[role]} onChange={handleRoleChange} className="form-select">
-            <option value="FIRM">Firm</option>
-            <option value="STUDENT">Student</option>
-            <option value="ADMIN">Admin</option>
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label>{role === Role.FIRM ? "Firm Name" : "Full Name"}</label>
-          <input name="name" type="text" required className="form-input" onChange={handleInputChange} />
-        </div>
-
-        {(role === Role.FIRM || role === Role.ADMIN) && (
-          <div className="form-group">
-            <label>Location</label>
-            <input name="location" type="text" required className="form-input" onChange={handleInputChange} />
-          </div>
-        )}
-
-        {role === Role.ADMIN && (
-          <div className="form-group">
-            <label>Admin Code</label>
-            <input name="adminCode" type="text" required className="form-input" onChange={handleInputChange} />
-          </div>
-        )}
-
-        {role === Role.STUDENT && (
-          <>
-            <div className="form-group">
-              <label>Phone</label>
-              <input name="phone" type="tel" required className="form-input" onChange={handleInputChange} />
+    // Render the single sign-up form
+    return (
+        <div className="auth-page">
+            <div className="auth-container">
+                <h2 className="auth-title">Create your account</h2>
             </div>
 
-            <div className="form-group">
-              <label>Aadhar</label>
-              <input name="aadhar" type="text" required className="form-input" onChange={handleInputChange} />
+            <div className="auth-form-container">
+                <div className="auth-form-card">
+                    {error && (
+                        <div className="error-alert">
+                            <strong>Error:</strong> {error}
+                        </div>
+                    )}
+                    <form className="auth-form" onSubmit={handleFormSubmit}>
+                        <div className="form-group">
+                            <label htmlFor="role" className="form-label">I am a...</label>
+                            <select id="role" name="role" value={role} onChange={(e) => setRole(e.target.value as Role)} className="form-select">
+                                <option value={Role.FIRM}>Firm</option>
+                                <option value={Role.STUDENT}>Student</option>
+                                <option value={Role.ADMIN}>Admin</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="name" className="form-label">{role === Role.FIRM ? 'Firm Name' : 'Full Name'}</label>
+                            <input id="name" name="name" type="text" value={formData.name} required onChange={handleInputChange} className="form-input" placeholder={role === Role.FIRM ? "Enter firm name" : "Enter your full name"} />
+                        </div>
+                        
+                        {(role === Role.FIRM || role === Role.ADMIN) && (
+                            <div className="form-group">
+                                <label htmlFor="location" className="form-label">Location</label>
+                                <input id="location" name="location" type="text" value={formData.location} required onChange={handleInputChange} className="form-input" placeholder="City or Region" />
+                            </div>
+                        )}
+                        
+                        {role === Role.ADMIN && (
+                            <div className="form-group">
+                                <label htmlFor="adminCode" className="form-label">Unique Admin Code</label>
+                                <input id="adminCode" name="adminCode" type="text" value={formData.adminCode} required placeholder="e.g., MYCODE123" onChange={handleInputChange} className="form-input" />
+                                <p className="form-input-description">This code will be shared with firms to link them to your dashboard.</p>
+                            </div>
+                        )}
+
+                        {role === Role.STUDENT && (
+                            <>
+                                <div className="form-group">
+                                    <label htmlFor="phone" className="form-label">Phone Number</label>
+                                    <input id="phone" name="phone" type="tel" value={formData.phone} required onChange={handleInputChange} className="form-input" placeholder="10-digit mobile number" />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="aadhar" className="form-label">Aadhar Number</label>
+                                    <input id="aadhar" name="aadhar" type="text" value={formData.aadhar} required onChange={handleInputChange} className="form-input" placeholder="12-digit UIDAI number" />
+                                </div>
+                            </>
+                        )}
+                        
+                        <div className="form-group">
+                            <label htmlFor="email" className="form-label">Email address</label>
+                            <input id="email" name="email" type="email" value={formData.email} required onChange={handleInputChange} className="form-input" placeholder="you@example.com" />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="password" className="form-label">Password</label>
+                            <input id="password" name="password" type="password" value={formData.password} required onChange={handleInputChange} className="form-input" placeholder="••••••••" />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
+                            <input id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} required onChange={handleInputChange} className="form-input" placeholder="••••••••" />
+                        </div>
+
+                        <div>
+                            <button type="submit" className={`submit-button ${role.toLowerCase()}`}>
+                                Create Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <div className="auth-footer">
+                        <button onClick={() => onNavigate('login', { role })} className="auth-footer-link" style={{marginTop: '0.5rem'}}>
+                            Already have an account? Log in
+                        </button>
+                        <button 
+                            onClick={() => onNavigate('welcome')} 
+                            className={`outline-button ${role.toLowerCase()}`} 
+                            style={{marginTop: '0.5rem'}}
+                        >
+                            Back to role selection
+                        </button>
+                    </div>
+                </div>
             </div>
-          </>
-        )}
-
-        <div className="form-group">
-          <label>Email</label>
-          <input name="email" type="email" required className="form-input" onChange={handleInputChange} />
         </div>
-
-        <div className="form-group">
-          <label>Password</label>
-          <input name="password" type="password" required className="form-input" onChange={handleInputChange} />
-        </div>
-
-        <div className="form-group">
-          <label>Confirm Password</label>
-          <input name="confirmPassword" type="password" required className="form-input" onChange={handleInputChange} />
-        </div>
-
-        {error && <p className="form-error">{error}</p>}
-
-        {/* DARK BUTTON LIKE LOGIN PAGE */}
-        <button type="submit" className={`btn ${getRoleButtonClass()}`} disabled={loading}>
-          {loading ? "Creating account..." : `Sign Up as ${config.name}`}
-        </button>
-
-        {/* BACK TO ROLE SELECTION */}
-        <div className="auth-links" style={{ marginTop: "1rem", textAlign: "center" }}>
-          <button
-            onClick={() => onNavigate("welcome")}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--color-text-secondary)",
-              cursor: "pointer",
-            }}
-          >
-            Back to role selection
-          </button>
-        </div>
-      </form>
-    </div>
-  );
+    );
 };
-
 export default SignUp;
