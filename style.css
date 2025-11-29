@@ -114,7 +114,7 @@ button {
 }
 .auth-form-card {
   background-color: white;
-  padding: 2rem 1rem;
+  padding: 2rem 1.5rem;
   box-shadow: var(--shadow);
 }
 @media (min-width: 640px) {
@@ -126,23 +126,23 @@ button {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; /* Increased gap for professional look */
+  gap: 1.5rem; /* Increased gap for better professional spacing */
 }
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem; /* Better label-input spacing */
+  gap: 0.5rem; /* Slightly increased label-input spacing */
 }
 .form-label {
   display: block;
   font-size: 0.875rem;
-  font-weight: 600; /* Slightly bolder for readability */
+  font-weight: 600;
   color: var(--gray-700);
 }
 .form-input, .form-select, .form-textarea {
   display: block;
   width: 100%;
-  padding: 0.875rem 1rem; /* Comfortable padding */
+  padding: 0.75rem 1rem;
   border: 1px solid var(--gray-300);
   border-radius: 0.375rem;
   box-shadow: var(--shadow-sm);
@@ -171,13 +171,15 @@ button {
 }
 .error-alert {
     background-color: #fee2e2;
-    border: 1px solid #f87171;
+    border-left: 4px solid #ef4444;
     color: #b91c1c;
     padding: 1rem;
     border-radius: 0.375rem;
     font-size: 0.9rem;
-    line-height: 1.4;
-    margin-bottom: 1.5rem;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
 }
 
 .submit-button {
@@ -223,6 +225,10 @@ button {
   margin-top: 0.75rem;
   text-decoration: none;
 }
+.outline-button:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
 .outline-button.firm { color: var(--firm-color); border-color: var(--firm-color); }
 .outline-button.firm:hover { background-color: var(--firm-light); }
 
@@ -259,11 +265,11 @@ button {
   color: var(--gray-500);
 }
 .auth-footer {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
   align-items: center;
 }
 .auth-footer-link {
