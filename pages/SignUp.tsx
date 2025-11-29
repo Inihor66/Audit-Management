@@ -26,6 +26,7 @@ const SignUp = ({ onNavigate }: SignUpProps) => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        if (error) setError(''); // Clear error on typing
     };
 
     // Handle form submission
@@ -79,13 +80,14 @@ const SignUp = ({ onNavigate }: SignUpProps) => {
                 <div className="auth-form-card">
                     {error && (
                         <div className="error-alert">
-                            <strong>Error:</strong> {error}
+                            <strong>Something went wrong:</strong>
+                            <div style={{marginTop: '0.25rem'}}>{error}</div>
                         </div>
                     )}
                     <form className="auth-form" onSubmit={handleFormSubmit}>
                         <div className="form-group">
                             <label htmlFor="role" className="form-label">I am a...</label>
-                            <select id="role" name="role" value={role} onChange={(e) => setRole(e.target.value as Role)} className="form-select">
+                            <select id="role" name="role" value={role} onChange={(e) => { setRole(e.target.value as Role); setError(''); }} className="form-select">
                                 <option value={Role.FIRM}>Firm</option>
                                 <option value={Role.STUDENT}>Student</option>
                                 <option value={Role.ADMIN}>Admin</option>
