@@ -12,7 +12,14 @@ interface ManageSubscriptionProps {
     onBack: () => void;
 }
 
-const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: SubscriptionPlan, user: User, onPaymentNotified: () => void, onBack: () => void }) => {
+interface PaymentFlowProps {
+    plan: SubscriptionPlan;
+    user: User;
+    onPaymentNotified: () => void;
+    onBack: () => void;
+}
+
+const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps) => {
     const [screenshot, setScreenshot] = useState<string | null>(null);
     const [error, setError] = useState('');
     const [notified, setNotified] = useState(false);
@@ -55,9 +62,9 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: Subscrip
                     template_id: config.TEMPLATE_ID,
                     user_id: config.PUBLIC_KEY,
                     template_params: {
-                        // Send to the Super Admin (aarohipurwar06@gmail.com)
+                        // Send to the Super Admin
                         to_email: CONTACT_INFO.email, 
-                        email: CONTACT_INFO.email, // Backup in case template uses {{email}}
+                        email: CONTACT_INFO.email, // Backup
                         to_name: 'Super Admin',
                         company_name: "Audit Managment app Presented by INIHOR",
                         
