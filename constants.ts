@@ -1,3 +1,4 @@
+
 import { Role, SubscriptionPlan } from './types';
 
 export const ROLE_CONFIG = {
@@ -26,4 +27,14 @@ export const CONTACT_INFO = {
     whatsapp_number: '+91 9422332475',
     upi: '9422332475@ibl',
     email: 'aarohipurwar06@gmail.com',
+};
+
+// EmailJS Configuration
+// 1. Go to emailjs.com, create account, add Gmail service -> Get SERVICE_ID
+// 2. Create a Template with {{message}}, {{to_name}}, {{to_email}} -> Get TEMPLATE_ID
+// 3. Go to Account > API Keys -> Get PUBLIC_KEY
+export const EMAILJS_CONFIG = {
+  SERVICE_ID: 'service_6gexxxx', // <-- PASTE YOUR REAL SERVICE ID HERE
+  TEMPLATE_ID: 'template_j1jxxxx', // <-- PASTE YOUR REAL TEMPLATE ID HERE
+  PUBLIC_KEY: 'WPvTVBEQwlGTWxxxx', // <-- PASTE YOUR REAL PUBLIC KEY HERE
 };
