@@ -5,7 +5,7 @@ import * as storage from '../../services/storageService';
 import { WhatsAppIcon } from '../../components/icons/WhatsAppIcon';
 import { CheckIcon } from '../../components/icons/CheckIcon';
 
-export interface ManageSubscriptionProps {
+interface ManageSubscriptionProps {
     user: User;
     refreshUser: () => void;
     onBack: () => void;
