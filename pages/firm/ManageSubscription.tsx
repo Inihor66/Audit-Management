@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { User, SubscriptionPlan, Role } from '../../types';
+import { Role } from '../../types';
+import type { User, SubscriptionPlan } from '../../types';
 import { SUBSCRIPTION_PLANS, CONTACT_INFO, ROLE_CONFIG, EMAILJS_SUBSCRIPTION_CONFIG } from '../../constants';
 import * as storage from '../../services/storageService';
 import { WhatsAppIcon } from '../../components/icons/WhatsAppIcon';
