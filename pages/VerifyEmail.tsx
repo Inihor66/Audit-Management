@@ -2,14 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as storage from '../services/storageService';
 import { User, Role } from '../types';
-
-// ==============================================================================
-// ⬇️⬇️⬇️ PASTE YOUR EMAILJS KEYS INSIDE THE QUOTES BELOW ⬇️⬇️⬇️
-// ==============================================================================
-const DEFAULT_SERVICE_ID = 'service_krtq6yi';   // Replace with your Service ID
-const DEFAULT_TEMPLATE_ID = 'template_9kfh2fh'; // Replace with your Template ID
-const DEFAULT_PUBLIC_KEY = 'ZXEQmcCT1ogbLL32A'; // Replace with your Public Key
-// ==============================================================================
+import { EMAILJS_CONFIG } from '../constants';
 
 interface VerifyEmailPageProps {
     userId: string;
@@ -33,9 +26,9 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
     // Initial config load: prioritize hardcoded constants if they are set
     const [config, setConfig] = useState(() => {
         return {
-            serviceId: DEFAULT_SERVICE_ID,
-            templateId: DEFAULT_TEMPLATE_ID,
-            publicKey: DEFAULT_PUBLIC_KEY,
+            serviceId: EMAILJS_CONFIG.SERVICE_ID,
+            templateId: EMAILJS_CONFIG.TEMPLATE_ID,
+            publicKey: EMAILJS_CONFIG.PUBLIC_KEY,
         };
     });
 
