@@ -29,6 +29,10 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
   // Stats calculations
   const entriesLeft = user.subscription.allowedEntries === 'infinity' ? 'Unlimited' : user.subscription.allowedEntries - user.subscription.entriesUsed;
   const canCreateForm = user.subscription.allowedEntries === 'infinity' || user.subscription.entriesUsed < user.subscription.allowedEntries;
+  
+  // Check if subscription is expired but unlimited features are still active
+  const isUnlimitedButExpired = user.subscription.status === 'inactive' && user.subscription.allowedEntries === 'infinity';
+
   const totalForms = forms.length;
   const activeForms = forms.filter(f => f.isApproved && !f.studentSubmission).length;
   const filledForms = forms.filter(f => !!f.studentSubmission).length;
@@ -141,8 +145,8 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
             <div className="subscription-section mt-6">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-gray-800">Subscription Status</h3>
-                    <span className={`status-badge ${user.subscription.status === 'active' ? 'green' : 'yellow'}`}>
-                        {user.subscription.status.toUpperCase()}
+                    <span className={`status-badge ${user.subscription.status === 'active' || isUnlimitedButExpired ? 'green' : 'yellow'}`}>
+                        {user.subscription.status === 'active' ? 'ACTIVE' : (isUnlimitedButExpired ? 'UNLOCKED' : 'INACTIVE')}
                     </span>
                 </div>
                 
@@ -150,7 +154,7 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
                     <div className="detail-item">
                         <label>Current Plan</label>
                         <p className="capitalize font-semibold text-firm-600">
-                            {user.subscription.plan ? user.subscription.plan.replace('_', ' ') : 'Free Plan'}
+                             {isUnlimitedButExpired ? 'Legacy (Unlocked)' : (user.subscription.plan ? user.subscription.plan.replace('_', ' ') : 'Free Plan')}
                         </p>
                     </div>
                     <div className="detail-item">
