@@ -70,6 +70,9 @@ export default function App() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Run subscription automation rules (Auto-Unlock / Expiry)
+        storage.processSubscriptionRules();
+
         const urlParams = new URLSearchParams(window.location.search);
         const pageFromUrl = urlParams.get('page');
 
@@ -115,6 +118,7 @@ export default function App() {
     const refreshUser = useCallback(() => {
         const loggedInUserId = sessionStorage.getItem('loggedInUserId');
         if (loggedInUserId) {
+            // Re-fetch logic to ensure we get latest subscription updates
             const user = storage.getUserById(loggedInUserId);
             if (user) {
                 setCurrentUser(user);
