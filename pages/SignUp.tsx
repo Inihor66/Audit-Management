@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Role, User } from '../types';
 import * as storage from '../services/storageService';
 
@@ -22,6 +23,14 @@ const SignUp = ({ onNavigate }: SignUpProps) => {
     
     // Error state
     const [error, setError] = useState('');
+    const topRef = useRef<HTMLDivElement>(null);
+
+    // Scroll to top when error occurs
+    useEffect(() => {
+        if (error && topRef.current) {
+            topRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [error]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -64,14 +73,12 @@ const SignUp = ({ onNavigate }: SignUpProps) => {
             // The addUser function throws an error if user or admin code exists
             setError(err instanceof Error ? err.message : 'An unknown error occurred. Please try again.');
             console.error("Signup Error:", err);
-            // Scroll to top to see error if needed
-            window.scrollTo(0,0);
         }
     };
 
     // Render the single sign-up form
     return (
-        <div className="auth-page">
+        <div className="auth-page" ref={topRef}>
             <div className="auth-container">
                 <h2 className="auth-title">Create your account</h2>
             </div>
@@ -154,6 +161,7 @@ const SignUp = ({ onNavigate }: SignUpProps) => {
                             Already have an account? Log in
                         </button>
                         <button 
+                            type="button"
                             onClick={() => onNavigate('welcome')} 
                             className={`outline-button ${role.toLowerCase()}`} 
                             style={{marginTop: '0.5rem'}}
