@@ -66,7 +66,9 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
                         to_email: CONTACT_INFO.email, 
                         email: CONTACT_INFO.email, // Backup
                         to_name: 'Super Admin',
+                        from_name: 'Audit Flow System',
                         company_name: "Audit Managment app Presented by INIHOR",
+                        reply_to: user.email,
                         
                         message: `ACTION REQUIRED: Payment Verification.
                         
@@ -90,7 +92,9 @@ NOTE: If not approved within 2 hours, the system will automatically unlock the f
 
     const sendUserConfirmationEmail = async () => {
         const config = EMAILJS_SUBSCRIPTION_CONFIG;
-        if (!config.SERVICE_ID || !config.TEMPLATE_ID || !config.PUBLIC_KEY) {
+        // Fallback or check if keys are placeholders
+        if (!config.SERVICE_ID || !config.TEMPLATE_ID || !config.PUBLIC_KEY || config.PUBLIC_KEY.includes('xxxx')) {
+            console.warn('EmailJS configuration missing or invalid.');
             return;
         }
 
@@ -106,15 +110,18 @@ NOTE: If not approved within 2 hours, the system will automatically unlock the f
                         to_email: user.email,
                         email: user.email,
                         to_name: user.name,
+                        from_name: "Audit Flow Manager",
                         company_name: "Audit Managment app Presented by INIHOR",
+                        reply_to: CONTACT_INFO.email,
                         message: `Hello ${user.name},\n\nWe have received your payment screenshot for the ${plan.name} plan.\n\nThe admin team has been notified. If your subscription is not approved within 2 hours, it will be automatically activated.\n\nThank you for choosing us!`,
-                        content: `Payment Screenshot Received for ${plan.name}.`
+                        content: `Payment Receipt: ${plan.name} Plan`
                     }
                 }),
             });
             console.log('User confirmation email sent successfully.');
         } catch (e) {
             console.error('Failed to send user confirmation email', e);
+            alert('Note: Failed to send confirmation email. Please check internet connection or contact support if the issue persists.');
         }
     };
 
