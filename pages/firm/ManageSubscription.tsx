@@ -41,7 +41,7 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
             };
             reader.onerror = () => {
                 setError('Failed to read file.');
-            }
+            };
             reader.readAsDataURL(file);
         }
     };
@@ -106,11 +106,11 @@ NOTE: If not approved within 2 hours, the system will automatically unlock the f
                 ...user,
                 subscription: {
                     ...user.subscription,
-                    status: 'active' as 'active',
+                    status: 'active' as const,
                     plan: plan.key,
                     startDate: startDate.toISOString(),
                     expiryDate: expiryDate.toISOString(),
-                    allowedEntries: 'infinity' as 'infinity',
+                    allowedEntries: 'infinity' as const,
                 },
                 pendingPaymentSS: null,
             };
@@ -127,7 +127,7 @@ NOTE: If not approved within 2 hours, the system will automatically unlock the f
             pendingPaymentSS: screenshot,
             paymentRequestDate: new Date().toISOString(), // Track time for 2-hour auto-unlock
             pendingPlanKey: plan.key,
-            subscription: { ...user.subscription, status: 'pending' as 'pending' }
+            subscription: { ...user.subscription, status: 'pending' as const }
         };
         storage.updateUser(updatedUser);
         
