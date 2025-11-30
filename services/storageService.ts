@@ -135,26 +135,28 @@ export const processSubscriptionRules = (): void => {
         if (user.subscription.status === 'active' && user.subscription.expiryDate) {
             const expiryTime = new Date(user.subscription.expiryDate);
             if (now > expiryTime) {
-                // Revert to Free Plan
+                // Per user request: "after expire the plane the additional feature should be unlocked"
+                // This implies that even if the subscription time ends, the features (Unlimited Entries) persist.
+                
                 user.subscription = {
-                    status: 'inactive',
-                    plan: 'free',
+                    status: 'inactive', // Mark as inactive (expired)
+                    plan: 'free', 
                     startDate: null,
                     expiryDate: null,
-                    entriesUsed: user.subscription.entriesUsed, // Keep used count? Or reset? Usually keep history.
-                    allowedEntries: ROLE_CONFIG[user.role].freeEntries,
+                    entriesUsed: user.subscription.entriesUsed,
+                    allowedEntries: 'infinity', // Keep features UNLOCKED
                 };
                 
                 user.notifications.push({
                     id: crypto.randomUUID(),
-                    message: `Your subscription has expired. You have been reverted to the free plan.`,
-                    type: 'warning',
+                    message: `Your subscription period has ended, but your premium features (Unlimited Entries) remain unlocked.`,
+                    type: 'success',
                     read: false,
                     createdAt: now.toISOString(),
                 });
 
                 changed = true;
-                console.log(`[System] Expired subscription for user: ${user.email}`);
+                console.log(`[System] Expired subscription but kept features unlocked for user: ${user.email}`);
             }
         }
     });
