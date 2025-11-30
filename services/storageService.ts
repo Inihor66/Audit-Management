@@ -84,6 +84,17 @@ export const updateUser = (updatedUser: User): void => {
     }
 };
 
+export const markNotificationAsRead = (userId: string, notificationId: string): void => {
+    const users = getUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+        users[userIndex].notifications = users[userIndex].notifications.map(n => 
+            n.id === notificationId ? { ...n, read: true } : n
+        );
+        saveUsers(users);
+    }
+};
+
 // --- Subscription Logic (Auto-Unlock & Expiry) ---
 export const processSubscriptionRules = (): void => {
     const users = getUsers();
