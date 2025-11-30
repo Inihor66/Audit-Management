@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { User, SubscriptionPlan, Role } from '../../types';
-import { SUBSCRIPTION_PLANS, CONTACT_INFO, ROLE_CONFIG, EMAILJS_CONFIG } from '../../constants';
+import { SUBSCRIPTION_PLANS, CONTACT_INFO, ROLE_CONFIG, EMAILJS_SUBSCRIPTION_CONFIG } from '../../constants';
 import * as storage from '../../services/storageService';
 import { WhatsAppIcon } from '../../components/icons/WhatsAppIcon';
 import { CheckIcon } from '../../components/icons/CheckIcon';
@@ -40,7 +40,8 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: Subscrip
     };
 
     const sendAdminNotificationEmail = async () => {
-        if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
+        const config = EMAILJS_SUBSCRIPTION_CONFIG;
+        if (!config.SERVICE_ID || !config.TEMPLATE_ID || !config.PUBLIC_KEY) {
             console.warn('EmailJS not configured, skipping admin email.');
             return;
         }
@@ -50,9 +51,9 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: Subscrip
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    service_id: EMAILJS_CONFIG.SERVICE_ID,
-                    template_id: EMAILJS_CONFIG.TEMPLATE_ID,
-                    user_id: EMAILJS_CONFIG.PUBLIC_KEY,
+                    service_id: config.SERVICE_ID,
+                    template_id: config.TEMPLATE_ID,
+                    user_id: config.PUBLIC_KEY,
                     template_params: {
                         // Send to the Super Admin (aarohipurwar06@gmail.com)
                         to_email: CONTACT_INFO.email, 
