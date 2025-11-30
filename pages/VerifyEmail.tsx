@@ -230,14 +230,14 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                                     <div style={{backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#1e3a8a'}}>
                                         <p style={{marginBottom: '0.5rem', fontWeight: 'bold'}}>How to fix "missing code" in emails:</p>
                                         <ol style={{paddingLeft: '1.25rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                                            <li>Go to your EmailJS Dashboard > Email Templates.</li>
+                                            <li>Go to your EmailJS Dashboard &gt; Email Templates.</li>
                                             <li>Edit your template (ID: <code>{config.templateId}</code>).</li>
                                             <li>
                                                 In the email body, ensure you are using one of these variables:
-                                                <br/><code>{`{{message}}`}</code> OR <code>{`{{verification_code}}`}</code> OR <code>{`{{code}}`}</code>.
+                                                <br/><code>{'{{message}}'}</code> OR <code>{'{{verification_code}}'}</code> OR <code>{'{{code}}'}</code>.
                                             </li>
                                             <li style={{backgroundColor: '#fef08a', padding: '0.5rem', borderRadius: '0.25rem', color: '#854d0e', fontWeight: 'bold'}}>
-                                                ALSO: Set the "To Email" field in the settings to <code>{`{{to_email}}`}</code>.
+                                                ALSO: Set the "To Email" field in the settings to <code>{'{{to_email}}'}</code>.
                                             </li>
                                             <li>Save the template and click "Test & Save" below.</li>
                                         </ol>
