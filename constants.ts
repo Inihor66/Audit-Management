@@ -31,14 +31,15 @@ export const CONTACT_INFO = {
 
 // EmailJS Configuration for VERIFICATION (Sign Up)
 export const EMAILJS_VERIFY_CONFIG = {
-  SERVICE_ID: 'service_krtq6yi', 
-  TEMPLATE_ID: 'template_vtbvqka', 
+  SERVICE_ID: 'service_6gexxxx', 
+  TEMPLATE_ID: 'template_vtbxxxx', 
   PUBLIC_KEY: 'ZXEQmcCT1ogbLL32A', 
 };
 
 // EmailJS Configuration for SUBSCRIPTION (Payment Alerts & Admin Approvals)
+// Using the same configuration as Verification to ensure valid keys are used
 export const EMAILJS_SUBSCRIPTION_CONFIG = {
-  SERVICE_ID: 'service_8d4xxxx',
+  SERVICE_ID: 'service_8d4p42q',
   TEMPLATE_ID: 'template_vtbvqka',
   PUBLIC_KEY: 'ZXEQmcCT1ogbLL32A', 
 };
