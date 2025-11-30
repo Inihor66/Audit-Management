@@ -53,10 +53,18 @@ const AuditForm = ({ user, onSuccess, onCancel, initialData }: AuditFormProps) =
       // Logic for creating a new form
       const canCreateForm = user.subscription.allowedEntries === 'infinity' || user.subscription.entriesUsed < user.subscription.allowedEntries;
       if (!canCreateForm) {
-        alert('Entry limit reached. Cannot create more forms.');
+        alert('Entry limit reached. Please upgrade your subscription.');
         return;
       }
 
+      // 1. DEDUCT ENTRY IMMEDIATELY (Update User)
+      if (user.subscription.allowedEntries !== 'infinity') {
+          const updatedUser = { ...user };
+          updatedUser.subscription.entriesUsed += 1;
+          storage.updateUser(updatedUser);
+      }
+
+      // 2. Add form with entryCounted = true
       storage.addForm({
         ...formData,
         createdByUserId: user.id,
@@ -64,10 +72,10 @@ const AuditForm = ({ user, onSuccess, onCancel, initialData }: AuditFormProps) =
         finalFees: null,
         studentSubmission: null,
         deleted: false,
-        entryCounted: false,
+        entryCounted: true, // Mark as counted immediately so deletion doesn't refund
       });
 
-      alert('Form submitted successfully! Waiting for admin approval.');
+      alert('Form submitted successfully! Entry deducted from your limit.');
     }
     onSuccess();
   };
