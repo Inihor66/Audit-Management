@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
 import { User, SubscriptionPlan, Role } from '../../types';
-import { SUBSCRIPTION_PLANS, CONTACT_INFO, ROLE_CONFIG } from '../../constants';
+import { SUBSCRIPTION_PLANS, CONTACT_INFO, ROLE_CONFIG, EMAILJS_CONFIG } from '../../constants';
 import * as storage from '../../services/storageService';
 import { WhatsAppIcon } from '../../components/icons/WhatsAppIcon';
-import CheckIcon from "../../components/icons/CheckIcon";
+import { CheckIcon } from '../../components/icons/CheckIcon';
 
 interface ManageSubscriptionProps {
     user: User;
@@ -16,11 +16,17 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: Subscrip
     const [screenshot, setScreenshot] = useState<string | null>(null);
     const [error, setError] = useState('');
     const [notified, setNotified] = useState(false);
+    const [sendingEmail, setSendingEmail] = useState(false);
     const roleClass = user.role.toLowerCase();
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // Check file size (limit to ~300KB for localStorage/EmailJS safety)
+            if (file.size > 300000) {
+                setError('File too large. Please upload an image smaller than 300KB.');
+                return;
+            }
             const reader = new FileReader();
             reader.onloadend = () => {
                 setScreenshot(reader.result as string);
@@ -33,11 +39,54 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: Subscrip
         }
     };
 
-    const handleNotifyAdmin = () => {
+    const sendAdminNotificationEmail = async () => {
+        if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
+            console.warn('EmailJS not configured, skipping admin email.');
+            return;
+        }
+
+        try {
+            await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    service_id: EMAILJS_CONFIG.SERVICE_ID,
+                    template_id: EMAILJS_CONFIG.TEMPLATE_ID,
+                    user_id: EMAILJS_CONFIG.PUBLIC_KEY,
+                    template_params: {
+                        // Send to the Super Admin (aarohipurwar06@gmail.com)
+                        to_email: CONTACT_INFO.email, 
+                        email: CONTACT_INFO.email, // Backup in case template uses {{email}}
+                        to_name: 'Super Admin',
+                        company_name: "Audit Managment app Presented by INIHOR",
+                        
+                        message: `ACTION REQUIRED: Payment Verification.
+                        
+User: ${user.name} (${user.email})
+Role: ${user.role}
+Plan Requested: ${plan.name} (₹${plan.price})
+Time: ${new Date().toLocaleString()}
+
+Please login to the Admin Dashboard to approve this payment. 
+NOTE: If not approved within 2 hours, the system will automatically unlock the features for this user.`,
+                        
+                        content: `User ${user.name} has uploaded a payment screenshot for the ${plan.name} plan.`
+                    }
+                }),
+            });
+            console.log('Admin notification email sent successfully.');
+        } catch (e) {
+            console.error('Failed to send admin notification email', e);
+        }
+    };
+
+    const handleNotifyAdmin = async () => {
         if (!screenshot) {
             setError('Please upload a payment screenshot.');
             return;
         }
+
+        setSendingEmail(true);
 
         // Admin users can auto-approve their own subscriptions.
         if (user.role === Role.ADMIN) {
@@ -60,20 +109,27 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: Subscrip
             storage.updateUser(updatedUser);
             alert(`Admin subscription for the ${plan.name} plan has been activated!`);
             onPaymentNotified();
+            setSendingEmail(false);
             return;
         }
         
         // Default flow for Firms: notify admin for manual approval.
-        const updatedUser = { 
+        const updatedUser: User = { 
             ...user, 
             pendingPaymentSS: screenshot,
+            paymentRequestDate: new Date().toISOString(), // Track time for 2-hour auto-unlock
+            pendingPlanKey: plan.key,
             subscription: { ...user.subscription, status: 'pending' as 'pending' }
         };
         storage.updateUser(updatedUser);
         
-        // Create admin notification
+        // Create admin notification in app
         storage.addAdminNotification(user, screenshot);
 
+        // Send Email to Main Admin
+        await sendAdminNotificationEmail();
+
+        setSendingEmail(false);
         setNotified(true);
     };
 
@@ -81,7 +137,10 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: Subscrip
         return (
              <div className="payment-notified-container">
                 <h3 className="payment-notified-title">Screenshot Uploaded!</h3>
-                <p className="payment-notified-text">The admin has been notified and will confirm your subscription manually. You will receive an in-app notification upon confirmation.</p>
+                <p className="payment-notified-text">The admin has been notified at <strong>{CONTACT_INFO.email}</strong>.</p>
+                <div style={{backgroundColor: '#ecfdf5', padding: '1rem', borderRadius: '0.5rem', margin: '1rem 0', fontSize: '0.875rem', color: '#065f46'}}>
+                    <strong>Note:</strong> If the admin does not manually confirm within <strong>2 hours</strong>, your subscription will be automatically activated.
+                </div>
                 <button onClick={onPaymentNotified} className="payment-notified-button">Go to Dashboard</button>
              </div>
         );
@@ -116,9 +175,9 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: { plan: Subscrip
             <div className="notify-admin-button-container">
                 <button 
                     onClick={handleNotifyAdmin} 
-                    disabled={!screenshot} 
+                    disabled={!screenshot || sendingEmail} 
                     className="notify-admin-button">
-                    {user.role === Role.ADMIN ? 'Activate Subscription' : 'Notify Admin'}
+                    {sendingEmail ? 'Processing...' : (user.role === Role.ADMIN ? 'Activate Subscription' : 'Notify Admin')}
                 </button>
             </div>
         </div>
