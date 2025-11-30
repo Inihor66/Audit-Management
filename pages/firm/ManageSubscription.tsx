@@ -39,9 +39,9 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Check file size (limit to ~300KB for localStorage/EmailJS safety)
-            if (file.size > 300000) {
-                setError('File too large. Please upload an image smaller than 300KB.');
+            // Check file size (limit to ~200KB for EmailJS best results, absolute max is usually higher but risky)
+            if (file.size > 200000) {
+                setError('File too large. Please upload an image smaller than 200KB for email delivery.');
                 return;
             }
             const reader = new FileReader();
@@ -79,6 +79,10 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
                         company_name: "Audit Managment app Presented by INIHOR",
                         reply_to: user.email,
                         
+                        // NEW PARAMS FOR SCREENSHOT AND BUTTON
+                        payment_screenshot: screenshot, // The base64 image string
+                        dashboard_link: window.location.origin, // Link to the website
+                        
                         message: `ACTION REQUIRED: Payment Verification.\n\nUser: ${user.name} (${user.email})\nRole: ${user.role}\nPlan Requested: ${plan.name} (₹${plan.price})\nTime: ${new Date().toLocaleString()}\n\nPlease login to the Admin Dashboard to approve this payment.\nNOTE: If not approved within 2 hours, the system will automatically unlock the features for this user.`,
                         
                         content: `User ${user.name} has uploaded a payment screenshot for the ${plan.name} plan.`
@@ -113,6 +117,7 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
                         from_name: "Audit Flow Manager",
                         company_name: "Audit Managment app Presented by INIHOR",
                         reply_to: CONTACT_INFO.email,
+                        dashboard_link: window.location.origin,
                         message: `Hello ${user.name},\n\nWe have received your payment screenshot for the ${plan.name} plan.\n\nThe admin team has been notified. If your subscription is not approved within 2 hours, it will be automatically activated.\n\nThank you for choosing us!`,
                         content: `Payment Receipt: ${plan.name} Plan`
                     }
@@ -260,15 +265,11 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
 
                     {showInstructions && (
                         <div style={{backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#1e3a8a'}}>
-                            <p style={{marginBottom: '0.5rem', fontWeight: 'bold'}}>How to fix email sending:</p>
+                            <p style={{marginBottom: '0.5rem', fontWeight: 'bold'}}>Configuring the Email Template:</p>
                             <ol style={{paddingLeft: '1.25rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                                <li>Login to EmailJS and get your <strong>Service ID</strong>, <strong>Template ID</strong>, and <strong>Public Key</strong>.</li>
-                                <li>
-                                    Ensure your template has a field like <code>{`{{message}}`}</code> to receive the content.
-                                </li>
-                                <li style={{backgroundColor: '#fef08a', padding: '0.5rem', borderRadius: '0.25rem', color: '#854d0e', fontWeight: 'bold'}}>
-                                    CRITICAL: Set the "To Email" field in your template settings to <code>{`{{to_email}}`}</code>.
-                                </li>
+                                <li><strong>To Show Screenshot:</strong> In your EmailJS template, add an Image block with URL: <code>{`{{payment_screenshot}}`}</code></li>
+                                <li><strong>To Add Button:</strong> Add a Link/Button with URL: <code>{`{{dashboard_link}}`}</code></li>
+                                <li><strong>To Fix Sending:</strong> Set "To Email" in settings to <code>{`{{to_email}}`}</code></li>
                             </ol>
                         </div>
                     )}
