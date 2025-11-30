@@ -1,13 +1,11 @@
-
 import React, { useState } from 'react';
-import { Role } from '../../types';
-import type { User, SubscriptionPlan } from '../../types';
+import { User, SubscriptionPlan, Role } from '../../types';
 import { SUBSCRIPTION_PLANS, CONTACT_INFO, ROLE_CONFIG, EMAILJS_SUBSCRIPTION_CONFIG } from '../../constants';
 import * as storage from '../../services/storageService';
 import { WhatsAppIcon } from '../../components/icons/WhatsAppIcon';
 import { CheckIcon } from '../../components/icons/CheckIcon';
 
-interface ManageSubscriptionProps {
+export interface ManageSubscriptionProps {
     user: User;
     refreshUser: () => void;
     onBack: () => void;
