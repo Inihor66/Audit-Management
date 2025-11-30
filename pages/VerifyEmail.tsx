@@ -45,6 +45,7 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
             } else {
                 // Try to send email automatically if keys look valid
                 if (config.serviceId && config.templateId && config.publicKey) {
+                    // Slight delay to allow UI to mount
                     setTimeout(() => {
                          if (status === 'idle') {
                             sendEmail(foundUser, foundUser.verificationCode || 'ERROR');
@@ -100,6 +101,7 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                         verification_code: code,
                         code: code,
                         otp: code,
+                        company_name: "AuditPro Solutions", 
                         
                         // Standard message body used by many default templates
                         message: `Your verification code is: ${code}`,
@@ -287,5 +289,5 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
         </div>
     );
 };
-
 export default VerifyEmailPage;
+    
