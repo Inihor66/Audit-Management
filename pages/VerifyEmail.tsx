@@ -6,9 +6,9 @@ import { User, Role } from '../types';
 // ==============================================================================
 // ⬇️⬇️⬇️ PASTE YOUR EMAILJS KEYS INSIDE THE QUOTES BELOW ⬇️⬇️⬇️
 // ==============================================================================
-const DEFAULT_SERVICE_ID = 'service_krtq6yi';   // Replace with your Service ID
-const DEFAULT_TEMPLATE_ID = 'template_9kfh2fh'; // Replace with your Template ID
-const DEFAULT_PUBLIC_KEY = 'ZXEQmcCT1ogbLL32A'; // Replace with your Public Key
+const DEFAULT_SERVICE_ID = 'service_6gexxxx';   // Replace with your Service ID
+const DEFAULT_TEMPLATE_ID = 'template_j1jxxxx'; // Replace with your Template ID
+const DEFAULT_PUBLIC_KEY = 'WPvTVBEQwlGTWxxxx'; // Replace with your Public Key
 // ==============================================================================
 
 interface VerifyEmailPageProps {
@@ -25,9 +25,9 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
     
     // Config State
     const [showConfig, setShowConfig] = useState(false);
-    const [showInstructions, setShowInstructions] = useState(false);
+    const [showInstructions, setShowInstructions] = useState(true); // Default to true so they see the fix
 
-    // Initial config load: prioritize hardcoded constants if they are set (and not the default placeholders if possible)
+    // Initial config load: prioritize hardcoded constants if they are set
     const [config, setConfig] = useState(() => {
         return {
             serviceId: DEFAULT_SERVICE_ID,
@@ -43,9 +43,8 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
             if (foundUser.isVerified) {
                 setIsVerified(true);
             } else {
-                // Try to send email automatically if keys look valid (basic check)
+                // Try to send email automatically if keys look valid
                 if (config.serviceId && config.templateId && config.publicKey) {
-                    // Slight delay to allow UI to mount before sending
                     setTimeout(() => {
                          if (status === 'idle') {
                             sendEmail(foundUser, foundUser.verificationCode || 'ERROR');
@@ -65,10 +64,7 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
     }, [userId]);
 
     const saveConfig = (newConfig: typeof config) => {
-        // We update state, but we don't persist to localStorage to avoid confusion with hardcoded keys.
-        // Users should update the code for permanent changes.
         setConfig(newConfig);
-        
         if (user) {
              setStatusMessage('Configuration updated. Click "Send Verification Email" below.');
              setStatus('idle');
@@ -85,6 +81,7 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
 
         setStatus('sending');
         setStatusMessage('Sending verification email...');
+        console.log(`[EmailJS] Sending to: ${currentUser.email} with code: ${code}`);
 
         try {
             const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -95,10 +92,18 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                     template_id: config.templateId,
                     user_id: config.publicKey,
                     template_params: {
-                        to_email: currentUser.email,
+                        to_email: currentUser.email, // "To Email" in Dashboard
+                        email: currentUser.email,    // Backup
                         to_name: currentUser.name,
+                        
+                        // We send the code in multiple variables to match whatever is in your template
                         verification_code: code,
-                        message: `Your verification code is: ${code}`
+                        code: code,
+                        otp: code,
+                        
+                        // Standard message body used by many default templates
+                        message: `Your verification code is: ${code}`,
+                        content: `Your verification code is: ${code}`,
                     }
                 }),
             });
@@ -109,12 +114,17 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                 setShowConfig(false);
             } else {
                 const errorText = await response.text();
+                console.error('[EmailJS Error]', errorText);
                 throw new Error(errorText || 'Failed to send email');
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Email Send Error:', err);
             setStatus('error');
-            setStatusMessage(`Failed to send email. Check your keys.`);
+            if (err.message && err.message.includes('recipients address is empty')) {
+                 setStatusMessage(`Error: Recipient Empty. Go to EmailJS Dashboard > Email Template. Set "To Email" field to {{to_email}}`);
+            } else {
+                 setStatusMessage(`Failed to send email. Check console for details.`);
+            }
             setShowConfig(true); 
         }
     };
@@ -212,24 +222,25 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
                                      <h4 style={{margin: '0', fontSize: '1rem', fontWeight: 600}}>EmailJS Configuration</h4>
                                      <button onClick={() => setShowInstructions(!showInstructions)} style={{fontSize: '0.875rem', color: 'var(--indigo-600)', textDecoration: 'underline'}}>
-                                        {showInstructions ? 'Hide Instructions' : 'How does this work?'}
+                                        {showInstructions ? 'Hide Instructions' : 'Show Instructions'}
                                      </button>
                                 </div>
 
                                 {showInstructions && (
                                     <div style={{backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#1e3a8a'}}>
-                                        <p style={{marginBottom: '0.5rem', fontWeight: 'bold'}}>To send real emails:</p>
-                                        <ol style={{paddingLeft: '1.25rem', margin: 0}}>
-                                            <li>Create an account at <a href="https://emailjs.com/" target="_blank" rel="noreferrer" style={{textDecoration: 'underline'}}>emailjs.com</a>.</li>
-                                            <li>Add an <strong>Email Service</strong> (e.g., Gmail). Copy the <strong>Service ID</strong>.</li>
-                                            <li>Create an <strong>Email Template</strong>. Copy the <strong>Template ID</strong>.</li>
-                                            <li style={{marginTop: '0.25rem'}}>
-                                                Add these variables to your template content:
-                                                <br/><code>{`{{to_name}}`}</code> and <code>{`{{verification_code}}`}</code>
+                                        <p style={{marginBottom: '0.5rem', fontWeight: 'bold'}}>How to fix "missing code" in emails:</p>
+                                        <ol style={{paddingLeft: '1.25rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                                            <li>Go to your EmailJS Dashboard > Email Templates.</li>
+                                            <li>Edit your template (ID: <code>{config.templateId}</code>).</li>
+                                            <li>
+                                                In the email body, ensure you are using one of these variables:
+                                                <br/><code>{`{{message}}`}</code> OR <code>{`{{verification_code}}`}</code> OR <code>{`{{code}}`}</code>.
                                             </li>
-                                            <li style={{marginTop: '0.25rem'}}>Go to <strong>Account &gt; General</strong> to copy your <strong>Public Key</strong>.</li>
+                                            <li style={{backgroundColor: '#fef08a', padding: '0.5rem', borderRadius: '0.25rem', color: '#854d0e', fontWeight: 'bold'}}>
+                                                ALSO: Set the "To Email" field in the settings to <code>{`{{to_email}}`}</code>.
+                                            </li>
+                                            <li>Save the template and click "Test & Save" below.</li>
                                         </ol>
-                                        <p style={{marginTop: '0.5rem', fontStyle: 'italic'}}>Note: For permanent configuration, update the <code>DEFAULT_</code> constants in this file code.</p>
                                     </div>
                                 )}
 
