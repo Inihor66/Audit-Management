@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { User, FormData, AdminNotification, SubscriptionPlan, Role } from '../../types';
 import * as storage from '../../services/storageService';
-import { SUBSCRIPTION_PLANS, ROLE_CONFIG, EMAILJS_CONFIG } from '../../constants';
+import { SUBSCRIPTION_PLANS, ROLE_CONFIG, EMAILJS_SUBSCRIPTION_CONFIG } from '../../constants';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Modal } from '../../components/Modal';
 import ManageSubscription from '../firm/ManageSubscription';
@@ -60,7 +60,8 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
     };
 
     const sendUserApprovalEmail = async (firmEmail: string, firmName: string, planName: string) => {
-        if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
+        const config = EMAILJS_SUBSCRIPTION_CONFIG;
+        if (!config.SERVICE_ID || !config.TEMPLATE_ID || !config.PUBLIC_KEY) {
             return;
         }
         try {
@@ -68,9 +69,9 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    service_id: EMAILJS_CONFIG.SERVICE_ID,
-                    template_id: EMAILJS_CONFIG.TEMPLATE_ID,
-                    user_id: EMAILJS_CONFIG.PUBLIC_KEY,
+                    service_id: config.SERVICE_ID,
+                    template_id: config.TEMPLATE_ID,
+                    user_id: config.PUBLIC_KEY,
                     template_params: {
                         to_email: firmEmail,
                         email: firmEmail,
