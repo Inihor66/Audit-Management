@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { User, FormData, AdminNotification, SubscriptionPlan, Role } from '../../types';
 import * as storage from '../../services/storageService';
-import { SUBSCRIPTION_PLANS, ROLE_CONFIG } from '../../constants';
+import { SUBSCRIPTION_PLANS, ROLE_CONFIG, EMAILJS_CONFIG } from '../../constants';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Modal } from '../../components/Modal';
 import ManageSubscription from '../firm/ManageSubscription';
@@ -23,6 +23,7 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [showTerms, setShowTerms] = useState(false);
     const [linkCopied, setLinkCopied] = useState(false);
+    const [processingPayment, setProcessingPayment] = useState(false);
     
     const roleClass = user.role.toLowerCase();
     const entriesLeft = user.subscription.allowedEntries === 'infinity' ? 'Unlimited' : user.subscription.allowedEntries - user.subscription.entriesUsed;
@@ -58,8 +59,38 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
         setIsPaymentModalOpen(true);
     };
 
-    const handleConfirmPayment = (plan: SubscriptionPlan) => {
+    const sendUserApprovalEmail = async (firmEmail: string, firmName: string, planName: string) => {
+        if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
+            return;
+        }
+        try {
+            await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    service_id: EMAILJS_CONFIG.SERVICE_ID,
+                    template_id: EMAILJS_CONFIG.TEMPLATE_ID,
+                    user_id: EMAILJS_CONFIG.PUBLIC_KEY,
+                    template_params: {
+                        to_email: firmEmail,
+                        email: firmEmail,
+                        to_name: firmName,
+                        company_name: "Audit Managment app Presented by INIHOR",
+                        // This 'message' variable corresponds to {{message}} in your EmailJS template
+                        message: `Congratulations! Your subscription for the ${planName} plan has been approved and is now active. You now have unlimited form entries.`,
+                        content: `Subscription Approved: ${planName}`,
+                    }
+                }),
+            });
+            console.log('User approval email sent.');
+        } catch (e) {
+            console.error('Failed to send user approval email', e);
+        }
+    };
+
+    const handleConfirmPayment = async (plan: SubscriptionPlan) => {
         if (selectedNotification) {
+            setProcessingPayment(true);
             const firmUser = storage.getUserById(selectedNotification.firmId);
             if (firmUser) {
                 const startDate = new Date();
@@ -75,6 +106,9 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                     allowedEntries: 'infinity',
                 };
                 firmUser.pendingPaymentSS = null;
+                firmUser.paymentRequestDate = undefined; // Clear auto-unlock timer
+                firmUser.pendingPlanKey = undefined;
+
                 firmUser.notifications.push({
                     id: crypto.randomUUID(),
                     message: `Your subscription for the ${plan.name} plan has been activated!`,
@@ -83,12 +117,16 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                     createdAt: new Date().toISOString()
                 });
                 storage.updateUser(firmUser);
+
+                // Send Email to the User confirming approval
+                await sendUserApprovalEmail(firmUser.email, firmUser.name, plan.name);
             }
             
             const updatedNotif = {...selectedNotification, handled: true };
             storage.updateAdminNotification(updatedNotif);
             fetchData();
             setIsPaymentModalOpen(false);
+            setProcessingPayment(false);
         }
     };
 
@@ -308,12 +346,13 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                         <img src={selectedNotification.ssDataUrl} alt="Payment Screenshot" className="payment-modal-screenshot" />
                         <div className="activate-plan-buttons">
                             {SUBSCRIPTION_PLANS.map(plan => (
-                                <button key={plan.key} onClick={() => handleConfirmPayment(plan)} className="activate-plan-button">
+                                <button key={plan.key} onClick={() => handleConfirmPayment(plan)} disabled={processingPayment} className="activate-plan-button">
                                     <span className="plan-name">Activate {plan.name} Plan</span>
                                     <span className="plan-details">₹{plan.price} for {plan.duration_months} month(s)</span>
                                 </button>
                             ))}
                         </div>
+                        {processingPayment && <p style={{marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--admin-color)'}}>Processing and sending email...</p>}
                     </div>
                 )}
             </Modal>
