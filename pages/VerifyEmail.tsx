@@ -6,9 +6,9 @@ import { User, Role } from '../types';
 // ==============================================================================
 // ⬇️⬇️⬇️ PASTE YOUR EMAILJS KEYS INSIDE THE QUOTES BELOW ⬇️⬇️⬇️
 // ==============================================================================
-const DEFAULT_SERVICE_ID = 'service_6gexxxx';   // Replace with your Service ID
-const DEFAULT_TEMPLATE_ID = 'template_j1jxxxx'; // Replace with your Template ID
-const DEFAULT_PUBLIC_KEY = 'WPvTVBEQwlGTWxxxx'; // Replace with your Public Key
+const DEFAULT_SERVICE_ID = 'service_krtq6yi';   // Replace with your Service ID
+const DEFAULT_TEMPLATE_ID = 'template_9kfh2fh'; // Replace with your Template ID
+const DEFAULT_PUBLIC_KEY = 'ZXEQmcCT1ogbLL32A'; // Replace with your Public Key
 // ==============================================================================
 
 interface VerifyEmailPageProps {
