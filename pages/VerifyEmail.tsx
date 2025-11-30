@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as storage from '../services/storageService';
 import { User, Role } from '../types';
-import { EMAILJS_CONFIG } from '../constants';
+import { EMAILJS_VERIFY_CONFIG } from '../constants';
 
 interface VerifyEmailPageProps {
     userId: string;
@@ -26,9 +26,9 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
     // Initial config load: prioritize hardcoded constants if they are set
     const [config, setConfig] = useState(() => {
         return {
-            serviceId: EMAILJS_CONFIG.SERVICE_ID,
-            templateId: EMAILJS_CONFIG.TEMPLATE_ID,
-            publicKey: EMAILJS_CONFIG.PUBLIC_KEY,
+            serviceId: EMAILJS_VERIFY_CONFIG.SERVICE_ID,
+            templateId: EMAILJS_VERIFY_CONFIG.TEMPLATE_ID,
+            publicKey: EMAILJS_VERIFY_CONFIG.PUBLIC_KEY,
         };
     });
 
