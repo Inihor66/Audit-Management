@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
-import { User, Role } from '../types';
+import { User, Role, Notification } from '../types';
 import * as storage from '../services/storageService';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { UserCircleIcon } from './icons/UserCircleIcon';
 import { ROLE_CONFIG } from '../constants';
 import { NotificationPopup } from './NotificationPopup';
+import { Modal } from './Modal';
 
 
 interface DashboardLayoutProps {
@@ -18,11 +20,16 @@ interface DashboardLayoutProps {
 export const DashboardLayout = ({ user, onLogout, children, onNavigateToProfile }: DashboardLayoutProps) => {
     const config = ROLE_CONFIG[user.role];
     const roleClass = user.role.toLowerCase();
+    
+    // State for Reminders and Notifications
     const [reminders, setReminders] = useState<{formId: string, message: string}[]>([]);
+    const [systemNotifications, setSystemNotifications] = useState<Notification[]>([]);
+    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
 
     useEffect(() => {
       if (!user) return;
       
+      // 1. Check for Form Payment Reminders
       const today = new Date();
       today.setHours(0,0,0,0);
       
@@ -32,7 +39,7 @@ export const DashboardLayout = ({ user, onLogout, children, onNavigateToProfile 
       if (user.role === Role.FIRM) {
         userReminders = allForms
           .filter(f => f.createdByUserId === user.id && f.paymentReminder && !f.reminderNotified && new Date(f.expectedDate) <= today)
-          .map(f => ({ formId: f.id, message: `Payment reminder for audit at ${f.location}.` }));
+          .map(f => ({ formId: f.id, message: `Payment due for audit at ${f.location}.` }));
       } else if (user.role === Role.ADMIN && user.adminCode) {
          userReminders = allForms
           .filter(f => f.adminCode?.trim().toLowerCase() === user.adminCode?.trim().toLowerCase() && f.paymentReminder && !f.reminderNotified && new Date(f.expectedDate) <= today)
@@ -40,6 +47,16 @@ export const DashboardLayout = ({ user, onLogout, children, onNavigateToProfile 
       }
 
       setReminders(userReminders);
+      
+      // Open Modal if there are active payment reminders
+      if (userReminders.length > 0) {
+          setIsReminderModalOpen(true);
+      }
+
+      // 2. Check for System Notifications (e.g., Subscription Active, Expiry warning)
+      const unreadNotifications = user.notifications.filter(n => !n.read);
+      setSystemNotifications(unreadNotifications);
+
     }, [user]);
 
     const handleCloseReminder = (formId: string) => {
@@ -48,6 +65,24 @@ export const DashboardLayout = ({ user, onLogout, children, onNavigateToProfile 
             storage.updateForm({ ...form, reminderNotified: true });
         }
         setReminders(prev => prev.filter(r => r.formId !== formId));
+    };
+
+    const handleCloseSystemNotification = (notificationId: string) => {
+        storage.markNotificationAsRead(user.id, notificationId);
+        setSystemNotifications(prev => prev.filter(n => n.id !== notificationId));
+    };
+
+    const handleCloseModal = () => {
+        setIsReminderModalOpen(false);
+        // Optionally mark reminders as notified in background when modal is acknowledged
+        reminders.forEach(r => {
+             const form = storage.getFormById(r.formId);
+             if (form) {
+                 storage.updateForm({ ...form, reminderNotified: true });
+             }
+        });
+        // Clear reminders from view since they were acknowledged via modal
+        setReminders([]); 
     };
 
     return (
@@ -83,9 +118,11 @@ export const DashboardLayout = ({ user, onLogout, children, onNavigateToProfile 
                     {children}
                 </div>
             </main>
+            
+            {/* Notification Toasts */}
             <div className="notification-container">
+                {/* Form Payment Reminders */}
                 {reminders.map(reminder => (
-                    // FIX: Wrap NotificationPopup in a React.Fragment to resolve a TypeScript error where the 'key' prop was incorrectly being checked against NotificationPopup's props.
                     <React.Fragment key={reminder.formId}>
                       <NotificationPopup
                         message={reminder.message}
@@ -93,7 +130,37 @@ export const DashboardLayout = ({ user, onLogout, children, onNavigateToProfile 
                       />
                     </React.Fragment>
                 ))}
+                {/* System Notifications */}
+                {systemNotifications.map(notification => (
+                    <React.Fragment key={notification.id}>
+                      <NotificationPopup
+                        message={notification.message}
+                        onClose={() => handleCloseSystemNotification(notification.id)}
+                      />
+                    </React.Fragment>
+                ))}
             </div>
+
+            {/* Modal for Urgent Reminders (Pop Up) */}
+            <Modal isOpen={isReminderModalOpen} onClose={handleCloseModal} title="Payment Reminders">
+                <div>
+                    <p style={{marginBottom: '1rem', color: 'var(--gray-700)'}}>
+                        You have the following pending payment reminders:
+                    </p>
+                    <ul style={{listStyleType: 'disc', paddingLeft: '1.5rem', marginBottom: '1.5rem', color: 'var(--gray-800)'}}>
+                        {reminders.map(r => (
+                            <li key={r.formId} style={{marginBottom: '0.5rem', fontWeight: 500}}>
+                                {r.message}
+                            </li>
+                        ))}
+                    </ul>
+                    <div className="modal-actions">
+                         <button onClick={handleCloseModal} className="modal-button save">
+                            Acknowledge
+                         </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };
