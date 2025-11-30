@@ -4,7 +4,30 @@ import { User, SubscriptionPlan, Role } from '../../types';
 import { SUBSCRIPTION_PLANS, CONTACT_INFO, ROLE_CONFIG, EMAILJS_SUBSCRIPTION_CONFIG } from '../../constants';
 import * as storage from '../../services/storageService';
 import { WhatsAppIcon } from '../../components/icons/WhatsAppIcon';
-import CheckIcon from '../../components/icons/CheckIcon';
+import { CheckIcon } from '../../components/icons/CheckIcon';
+
+// Universal Email Template Code
+const UNIVERSAL_EMAIL_TEMPLATE = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; color: #333;">
+  <div style="background-color: #2563EB; padding: 20px; text-align: center;">
+    <h2 style="color: white; margin: 0;">{{#if verification_code}}Verify Email{{else}}{{#if payment_screenshot}}Payment Action{{else}}Notification{{/if}}{{/if}}</h2>
+  </div>
+  <div style="padding: 20px;">
+    <p>Hello <strong>{{to_name}}</strong>,</p>
+    {{#if verification_code}}
+      <p>Verification Code:</p>
+      <div style="background-color: #ecfdf5; padding: 15px; font-size: 24px; font-weight: bold; color: #047857; text-align: center; letter-spacing: 5px; margin: 20px 0;">{{verification_code}}</div>
+    {{/if}}
+    {{#if payment_screenshot}}
+      <p>{{content}}</p>
+      <div style="margin: 10px 0; border: 1px solid #ddd; padding: 5px;"><img src="{{payment_screenshot}}" alt="Proof" style="width: 100%; display: block;" /></div>
+      <div style="text-align: center; margin-top: 20px;"><a href="{{dashboard_link}}" style="background-color: #16A34A; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login</a></div>
+    {{/if}}
+    {{#unless verification_code}}{{#unless payment_screenshot}}
+      <p style="white-space: pre-wrap;">{{message}}</p>
+    {{/unless}}{{/unless}}
+  </div>
+  <div style="background-color: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #666;">{{company_name}}</div>
+</div>`;
 
 interface ManageSubscriptionProps {
     user: User;
@@ -39,7 +62,7 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Check file size (limit to ~200KB for EmailJS best results, absolute max is usually higher but risky)
+            // Check file size (limit to ~200KB for EmailJS best results)
             if (file.size > 200000) {
                 setError('File too large. Please upload an image smaller than 200KB for email delivery.');
                 return;
@@ -71,7 +94,7 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
                     template_id: emailConfig.templateId,
                     user_id: emailConfig.publicKey,
                     template_params: {
-                        // Send to the Super Admin
+                        // Routing
                         to_email: CONTACT_INFO.email, 
                         email: CONTACT_INFO.email, // Backup
                         to_name: 'Super Admin',
@@ -79,12 +102,18 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
                         company_name: "Audit Managment app Presented by INIHOR",
                         reply_to: user.email,
                         
-                        // NEW PARAMS FOR SCREENSHOT AND BUTTON
-                        payment_screenshot: screenshot, // The base64 image string
-                        dashboard_link: window.location.origin, // Link to the website
+                        // Data for Universal Template
+                        payment_screenshot: screenshot, // Triggers "Payment Action" view
+                        dashboard_link: window.location.origin, 
                         
-                        message: `ACTION REQUIRED: Payment Verification.\n\nUser: ${user.name} (${user.email})\nRole: ${user.role}\nPlan Requested: ${plan.name} (₹${plan.price})\nTime: ${new Date().toLocaleString()}\n\nPlease login to the Admin Dashboard to approve this payment.\nNOTE: If not approved within 2 hours, the system will automatically unlock the features for this user.`,
-                        
+                        user_name: user.name,
+                        user_email: user.email,
+                        user_role: user.role,
+                        plan_name: plan.name,
+                        plan_price: plan.price,
+                        date: new Date().toLocaleString(),
+
+                        message: `ACTION REQUIRED: Payment Verification for ${user.name}.`,
                         content: `User ${user.name} has uploaded a payment screenshot for the ${plan.name} plan.`
                     }
                 }),
@@ -98,7 +127,6 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
 
     const sendUserConfirmationEmail = async () => {
         if (!emailConfig.serviceId || !emailConfig.templateId || !emailConfig.publicKey || emailConfig.publicKey.includes('xxxx')) {
-            console.warn('EmailJS configuration missing or invalid.');
             return;
         }
 
@@ -118,15 +146,15 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
                         company_name: "Audit Managment app Presented by INIHOR",
                         reply_to: CONTACT_INFO.email,
                         dashboard_link: window.location.origin,
+                        
+                        // No screenshot or verification code -> Triggers Generic Message view
                         message: `Hello ${user.name},\n\nWe have received your payment screenshot for the ${plan.name} plan.\n\nThe admin team has been notified. If your subscription is not approved within 2 hours, it will be automatically activated.\n\nThank you for choosing us!`,
-                        content: `Payment Receipt: ${plan.name} Plan`
                     }
                 }),
             });
             console.log('User confirmation email sent successfully.');
         } catch (e) {
             console.error('Failed to send user confirmation email', e);
-            // Non-critical error, don't re-throw
         }
     };
 
@@ -138,7 +166,6 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
 
         setSendingEmail(true);
 
-        // Admin users can auto-approve their own subscriptions.
         if (user.role === Role.ADMIN) {
             const startDate = new Date();
             const expiryDate = new Date();
@@ -164,23 +191,18 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
         }
         
         try {
-            // Attempt to send email first to ensure config is valid
             await sendAdminNotificationEmail();
 
-            // Default flow for Firms: notify admin for manual approval.
             const updatedUser: User = { 
                 ...user, 
                 pendingPaymentSS: screenshot,
-                paymentRequestDate: new Date().toISOString(), // Track time for 2-hour auto-unlock
+                paymentRequestDate: new Date().toISOString(),
                 pendingPlanKey: plan.key,
                 subscription: { ...user.subscription, status: 'pending' as const }
             };
             storage.updateUser(updatedUser);
-            
-            // Create admin notification in app
             storage.addAdminNotification(user, screenshot);
 
-            // Send Confirmation Email to User
             await sendUserConfirmationEmail();
 
             setSendingEmail(false);
@@ -188,8 +210,9 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
         } catch (error) {
             console.error("Payment notification failed:", error);
             setSendingEmail(false);
-            setShowConfig(true); // Show config form if email fails
-            setError('Failed to send email notification. Please check your EmailJS configuration below and try again.');
+            setShowConfig(true);
+            setShowInstructions(true); // Auto-show instructions on failure
+            setError('Failed to send email. Please configure EmailJS below.');
         }
     };
 
@@ -199,7 +222,6 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
             return;
         }
         setError('');
-        // Retry the notification
         handleNotifyAdmin();
     };
 
@@ -265,12 +287,14 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
 
                     {showInstructions && (
                         <div style={{backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#1e3a8a'}}>
-                            <p style={{marginBottom: '0.5rem', fontWeight: 'bold'}}>Configuring the Email Template:</p>
-                            <ol style={{paddingLeft: '1.25rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                                <li><strong>To Show Screenshot:</strong> In your EmailJS template, add an Image block with URL: <code>{`{{payment_screenshot}}`}</code></li>
-                                <li><strong>To Add Button:</strong> Add a Link/Button with URL: <code>{`{{dashboard_link}}`}</code></li>
-                                <li><strong>To Fix Sending:</strong> Set "To Email" in settings to <code>{`{{to_email}}`}</code></li>
-                            </ol>
+                            <p style={{marginBottom: '0.5rem', fontWeight: 'bold'}}>One Template to Rule Them All:</p>
+                            <p style={{marginBottom: '0.5rem'}}>Copy the code below into your EmailJS template (Source Code mode). It handles verification codes, payment screenshots, and notifications in one.</p>
+                            <textarea 
+                                readOnly 
+                                style={{width: '100%', height: '100px', fontSize: '0.75rem', fontFamily: 'monospace', padding: '0.5rem', border: '1px solid #93c5fd', borderRadius: '0.25rem', whiteSpace: 'pre'}}
+                                value={UNIVERSAL_EMAIL_TEMPLATE}
+                            />
+                            <p style={{marginTop: '0.5rem', fontSize: '0.75rem'}}><strong>IMPORTANT:</strong> Set "To Email" in settings to <code>{`{{to_email}}`}</code>.</p>
                         </div>
                     )}
 
