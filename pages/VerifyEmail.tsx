@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as storage from '../services/storageService';
 import { User, Role } from '../types';
 
@@ -25,7 +25,10 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
     
     // Config State
     const [showConfig, setShowConfig] = useState(false);
-    const [showInstructions, setShowInstructions] = useState(true); // Default to true so they see the fix
+    const [showInstructions, setShowInstructions] = useState(true);
+
+    // Ref to prevent double-sending in React StrictMode
+    const emailSentRef = useRef<string | null>(null);
 
     // Initial config load: prioritize hardcoded constants if they are set
     const [config, setConfig] = useState(() => {
@@ -43,18 +46,17 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
             if (foundUser.isVerified) {
                 setIsVerified(true);
             } else {
-                // Try to send email automatically if keys look valid
-                if (config.serviceId && config.templateId && config.publicKey) {
-                    // Slight delay to allow UI to mount
-                    setTimeout(() => {
-                         if (status === 'idle') {
-                            sendEmail(foundUser, foundUser.verificationCode || 'ERROR');
-                         }
-                    }, 500);
-                } else {
-                    setStatus('error');
-                    setStatusMessage('EmailJS not configured. Please check your keys below.');
-                    setShowConfig(true);
+                // Logic to send email automatically ONCE
+                if (emailSentRef.current !== userId) {
+                     // Check if keys exist
+                     if (config.serviceId && config.templateId && config.publicKey) {
+                        emailSentRef.current = userId; // Mark as sent for this ID
+                        sendEmail(foundUser, foundUser.verificationCode || 'ERROR');
+                     } else {
+                        setStatus('error');
+                        setStatusMessage('EmailJS not configured. Please check your keys below.');
+                        setShowConfig(true);
+                     }
                 }
             }
         } else {
@@ -62,13 +64,14 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
             setStatusMessage('User not found. Please sign up again.');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userId]);
+    }, [userId]); // Only re-run if userId changes
 
     const saveConfig = (newConfig: typeof config) => {
         setConfig(newConfig);
         if (user) {
              setStatusMessage('Configuration updated. Click "Send Verification Email" below.');
              setStatus('idle');
+             emailSentRef.current = null; // Allow re-sending manually
         }
     };
 
@@ -82,7 +85,7 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
 
         setStatus('sending');
         setStatusMessage('Sending verification email...');
-        console.log(`[EmailJS] Sending to: ${currentUser.email} with code: ${code}`);
+        console.log(`[EmailJS] Sending to: ${currentUser.email} (Role: ${currentUser.role}) with code: ${code}`);
 
         try {
             const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -94,14 +97,14 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                     user_id: config.publicKey,
                     template_params: {
                         to_email: currentUser.email, // "To Email" in Dashboard
-                        email: currentUser.email,    // Backup
+                        email: currentUser.email,    // Backup variable
                         to_name: currentUser.name,
                         
                         // We send the code in multiple variables to match whatever is in your template
                         verification_code: code,
                         code: code,
                         otp: code,
-                        company_name: "AuditPro Solutions", 
+                        company_name: "Audit Managment app Presented by INIHOR", 
                         
                         // Standard message body used by many default templates
                         message: `Your verification code is: ${code}`,
@@ -128,6 +131,8 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                  setStatusMessage(`Failed to send email. Check console for details.`);
             }
             setShowConfig(true); 
+            // Allow retry
+            emailSentRef.current = null;
         }
     };
 
@@ -145,10 +150,15 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
     };
 
     const handleResend = () => {
-        if (user) sendEmail(user, user.verificationCode || 'ERROR');
+        if (user) {
+            emailSentRef.current = user.id; // Mark as attempting
+            sendEmail(user, user.verificationCode || 'ERROR');
+        }
     };
 
     if (!user) return <div className="loading-screen"><p>Loading...</p></div>;
+
+    const roleClass = user.role.toLowerCase();
 
     return (
         <div className="auth-page">
@@ -157,7 +167,7 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                 
                 {isVerified ? (
                     <div style={{marginTop: '2rem'}}>
-                        <div style={{ margin: '0 auto 1.5rem', color: 'var(--admin-color)', width: '4rem' }}>
+                        <div style={{ margin: '0 auto 1.5rem', color: `var(--${roleClass}-color)`, width: '4rem' }}>
                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                              </svg>
@@ -165,7 +175,7 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                         <p style={{fontSize: '1.25rem', fontWeight: 600, color: 'var(--gray-800)'}}>Verified Successfully!</p>
                         <button
                             onClick={() => onNavigate('login', { role: user.role })}
-                            className={`submit-button ${user.role.toLowerCase()}`}
+                            className={`submit-button ${roleClass}`}
                             style={{marginTop: '1.5rem'}}
                         >
                             Continue to Login
@@ -187,7 +197,7 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                                 maxLength={6}
                                 placeholder="000000"
                            />
-                           <button onClick={handleVerify} className={`submit-button ${user.role.toLowerCase()}`} style={{marginTop: '1rem'}}>
+                           <button onClick={handleVerify} className={`submit-button ${roleClass}`} style={{marginTop: '1rem'}}>
                                 Verify Code
                            </button>
                         </div>
@@ -277,7 +287,7 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
                                     />
                                 </div>
                                 <div style={{display: 'flex', gap: '1rem'}}>
-                                    <button onClick={() => saveConfig(config)} className={`submit-button ${user.role.toLowerCase()}`}>
+                                    <button onClick={() => saveConfig(config)} className={`submit-button ${roleClass}`}>
                                         Test & Save (Session Only)
                                     </button>
                                 </div>
@@ -290,4 +300,3 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
     );
 };
 export default VerifyEmailPage;
-    
