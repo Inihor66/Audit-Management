@@ -28,6 +28,9 @@ export interface User {
   adminCode?: string; // Unique code for admins to link with firms
   subscription: Subscription;
   pendingPaymentSS: string | null; // Data URL of the screenshot
+  // New fields for Auto-Unlock feature
+  paymentRequestDate?: string; // ISO Date string when they clicked "Notify Admin"
+  pendingPlanKey?: 'monthly' | 'six_month' | 'yearly'; // The plan they are trying to buy
   notifications: Notification[];
 }
 
