@@ -1,5 +1,6 @@
-import { User, FormData, AdminNotification, Role, Subscription } from '../types';
-import { ROLE_CONFIG } from '../constants';
+
+import { User, FormData, AdminNotification, Role, Subscription, SubscriptionPlan } from '../types';
+import { ROLE_CONFIG, SUBSCRIPTION_PLANS } from '../constants';
 
 const USERS_KEY = 'audit_flow_users';
 const FORMS_KEY = 'audit_flow_forms';
@@ -83,6 +84,85 @@ export const updateUser = (updatedUser: User): void => {
     }
 };
 
+// --- Subscription Logic (Auto-Unlock & Expiry) ---
+export const processSubscriptionRules = (): void => {
+    const users = getUsers();
+    const now = new Date();
+    let changed = false;
+
+    users.forEach(user => {
+        // 1. Auto-Unlock Logic (If pending > 2 hours)
+        if (user.subscription.status === 'pending' && user.paymentRequestDate && user.pendingPlanKey) {
+            const requestTime = new Date(user.paymentRequestDate);
+            const diffMs = now.getTime() - requestTime.getTime();
+            const diffHours = diffMs / (1000 * 60 * 60);
+
+            if (diffHours >= 2) {
+                // Determine Plan Details
+                const planDetails = SUBSCRIPTION_PLANS.find(p => p.key === user.pendingPlanKey);
+                if (planDetails) {
+                    const startDate = new Date();
+                    const expiryDate = new Date();
+                    expiryDate.setMonth(startDate.getMonth() + planDetails.duration_months);
+
+                    user.subscription = {
+                        ...user.subscription,
+                        status: 'active',
+                        plan: user.pendingPlanKey,
+                        startDate: startDate.toISOString(),
+                        expiryDate: expiryDate.toISOString(),
+                        allowedEntries: 'infinity',
+                    };
+                    user.pendingPaymentSS = null;
+                    user.pendingPlanKey = undefined; // Clear pending
+                    user.paymentRequestDate = undefined;
+                    
+                    user.notifications.push({
+                        id: crypto.randomUUID(),
+                        message: `System Auto-Approval: Your ${planDetails.name} subscription is now active!`,
+                        type: 'success',
+                        read: false,
+                        createdAt: now.toISOString(),
+                    });
+                    
+                    changed = true;
+                    console.log(`[System] Auto-approved subscription for user: ${user.email}`);
+                }
+            }
+        }
+
+        // 2. Expiration Logic
+        if (user.subscription.status === 'active' && user.subscription.expiryDate) {
+            const expiryTime = new Date(user.subscription.expiryDate);
+            if (now > expiryTime) {
+                // Revert to Free Plan
+                user.subscription = {
+                    status: 'inactive',
+                    plan: 'free',
+                    startDate: null,
+                    expiryDate: null,
+                    entriesUsed: user.subscription.entriesUsed, // Keep used count? Or reset? Usually keep history.
+                    allowedEntries: ROLE_CONFIG[user.role].freeEntries,
+                };
+                
+                user.notifications.push({
+                    id: crypto.randomUUID(),
+                    message: `Your subscription has expired. You have been reverted to the free plan.`,
+                    type: 'warning',
+                    read: false,
+                    createdAt: now.toISOString(),
+                });
+
+                changed = true;
+                console.log(`[System] Expired subscription for user: ${user.email}`);
+            }
+        }
+    });
+
+    if (changed) {
+        saveUsers(users);
+    }
+};
 
 // --- Form Management ---
 export const getForms = (): FormData[] => getItem<FormData[]>(FORMS_KEY, []);
