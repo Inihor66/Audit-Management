@@ -29,12 +29,16 @@ export const CONTACT_INFO = {
     email: 'aarohipurwar06@gmail.com',
 };
 
-// EmailJS Configuration
-// 1. Go to emailjs.com, create account, add Gmail service -> Get SERVICE_ID
-// 2. Create a Template with {{message}}, {{to_name}}, {{to_email}} -> Get TEMPLATE_ID
-// 3. Go to Account > API Keys -> Get PUBLIC_KEY
-export const EMAILJS_CONFIG = {
-  SERVICE_ID: 'service_6gexxxx', // <-- PASTE YOUR REAL SERVICE ID HERE
-  TEMPLATE_ID: 'template_j1jxxxx', // <-- PASTE YOUR REAL TEMPLATE ID HERE
-  PUBLIC_KEY: 'WPvTVBEQwlGTWxxxx', // <-- PASTE YOUR REAL PUBLIC KEY HERE
+// EmailJS Configuration for VERIFICATION (Sign Up)
+export const EMAILJS_VERIFY_CONFIG = {
+  SERVICE_ID: 'service_krtq6yi', 
+  TEMPLATE_ID: 'template_vtbvqka', 
+  PUBLIC_KEY: 'ZXEQmcCT1ogbLL32A', 
+};
+
+// EmailJS Configuration for SUBSCRIPTION (Payment Alerts & Admin Approvals)
+export const EMAILJS_SUBSCRIPTION_CONFIG = {
+  SERVICE_ID: 'service_8d4xxxx',
+  TEMPLATE_ID: 'template_vtbvqka',
+  PUBLIC_KEY: 'ZXEQmcCT1ogbLL32A', 
 };
