@@ -11,7 +11,6 @@ interface AdminDashboardProps {
   user: User;
   onLogout: () => void;
   refreshUser: () => void;
-  // FIX: Updated onNavigate prop to accept an options object to match the signature in App.tsx
   onNavigate: (page: string, options?: { role?: Role; formId?: string; }) => void;
 }
 
@@ -77,7 +76,6 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                         email: firmEmail,
                         to_name: firmName,
                         company_name: "Audit Managment app Presented by INIHOR",
-                        // This 'message' variable corresponds to {{message}} in your EmailJS template
                         message: `Congratulations! Your subscription for the ${planName} plan has been approved and is now active. You now have unlimited form entries.`,
                         content: `Subscription Approved: ${planName}`,
                     }
@@ -107,11 +105,11 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                     allowedEntries: 'infinity',
                 };
                 firmUser.pendingPaymentSS = null;
-                firmUser.paymentRequestDate = undefined; // Clear auto-unlock timer
+                firmUser.paymentRequestDate = undefined;
                 firmUser.pendingPlanKey = undefined;
 
                 firmUser.notifications.push({
-                    id: crypto.randomUUID(),
+                    id: storage.generateId(), // Safe ID generation
                     message: `Your subscription for the ${plan.name} plan has been activated!`,
                     type: 'success',
                     read: false,
@@ -119,7 +117,6 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                 });
                 storage.updateUser(firmUser);
 
-                // Send Email to the User confirming approval
                 await sendUserApprovalEmail(firmUser.email, firmUser.name, plan.name);
             }
             
@@ -186,7 +183,6 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                                    <td>{new Date(form.expectedDate).toLocaleDateString()}</td>
                                    <td>{form.studentSubmission?.studentName || 'N/A'}</td>
                                    <td style={{textAlign: 'right'}}>
-                                       {/* FIX: Updated onNavigate call to pass an options object */}
                                        <button onClick={() => onNavigate('form_details', { formId: form.id })} className="table-action-link view">View / Edit</button>
                                    </td>
                                </tr>
@@ -265,7 +261,6 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                                        {showTerms && <td className="terms-cell" title={form.postEditTerms ?? ''}>{form.postEditTerms || 'N/A'}</td>}
                                        <td><span className={`status-badge ${statusClass}`}>{status}</span></td>
                                        <td style={{textAlign: 'right'}}>
-                                           {/* FIX: Updated onNavigate call to pass an options object */}
                                            <button onClick={() => onNavigate('form_details', { formId: form.id })} className="table-action-link view">View / Edit</button>
                                        </td>
                                    </tr>
