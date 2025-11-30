@@ -1,3 +1,4 @@
+
 /*
  * Audit Flow Manager Stylesheet
  */
@@ -61,6 +62,45 @@ button {
   font-size: inherit;
 }
 
+/* Utilities helper classes */
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-6 { margin-top: 1.5rem; }
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: 0.875rem; }
+.text-lg { font-size: 1.125rem; }
+.text-2xl { font-size: 1.5rem; }
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.text-gray-400 { color: var(--gray-400); }
+.text-gray-500 { color: var(--gray-500); }
+.text-gray-600 { color: var(--gray-600); }
+.text-gray-800 { color: var(--gray-800); }
+.text-blue-600 { color: var(--firm-color); }
+.text-firm-600 { color: var(--firm-color); }
+.text-red-600 { color: var(--red-600); }
+.bg-blue-100 { background-color: var(--firm-light); }
+.italic { font-style: italic; }
+.capitalize { text-transform: capitalize; }
+.flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.gap-4 { gap: 1rem; }
+.w-auto { width: auto; }
+.w-4 { width: 1rem; }
+.h-4 { height: 1rem; }
+.w-6 { width: 1.5rem; }
+.h-6 { height: 1.5rem; }
+.max-w-4xl { max-width: 56rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.hover\:underline:hover { text-decoration: underline; }
+
 /* 2. Generic & Reusable Components
 -------------------------------------------------- */
 .loading-screen {
@@ -78,6 +118,7 @@ button {
   font-size: 0.875rem;
   transition: opacity 0.2s;
   color: var(--indigo-600);
+  display: inline-block;
 }
 .back-link:hover { opacity: 0.8; }
 .back-link.firm { color: var(--firm-color); }
@@ -126,12 +167,12 @@ button {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; /* Increased gap for better professional spacing */
+  gap: 1.5rem; /* Spacious professional gap */
 }
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem; /* Slightly increased label-input spacing */
+  gap: 0.5rem; /* Label to input spacing */
 }
 .form-label {
   display: block;
@@ -500,6 +541,7 @@ button {
   height: 2.5rem;
   border-radius: 9999px;
   transition: background-color 0.2s;
+  cursor: pointer;
 }
 .header-icon-button:hover { background-color: var(--gray-100); }
 .header-icon-button .user-icon { width: 1.5rem; height: 1.5rem; }
@@ -534,17 +576,24 @@ button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: white;
   background-color: var(--firm-color);
   border-radius: 0.375rem;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
-.create-new-form-button:hover { background-color: var(--firm-hover-color); }
-.create-new-form-button:disabled { background-color: var(--gray-400); cursor: not-allowed; }
+.create-new-form-button:hover { 
+  background-color: var(--firm-hover-color); 
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+}
+.create-new-form-button:active { transform: translateY(0); }
+.create-new-form-button:disabled { background-color: var(--gray-400); cursor: not-allowed; box-shadow: none; transform: none; }
 .create-new-form-button .plus-icon { width: 1rem; height: 1rem; }
+
 .card { background-color: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: var(--shadow); }
 .card-title { font-size: 1.125rem; font-weight: 600; color: var(--gray-800); border-bottom: 1px solid var(--gray-200); padding-bottom: 0.5rem; margin-bottom: 1rem; }
 .card-content-item { font-size: 0.875rem; color: var(--gray-600); margin-bottom: 0.5rem; }
@@ -574,17 +623,18 @@ button {
 .table-search-input {
   display: block;
   width: 100%;
-  max-width: 16rem;
-  padding: 0.5rem 0.75rem;
+  max-width: 20rem;
+  padding: 0.6rem 1rem;
   border: 1px solid var(--gray-300);
   border-radius: 0.375rem;
   box-shadow: var(--shadow-sm);
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  transition: all 0.2s;
 }
 .table-search-input:focus {
   outline: none;
   border-color: var(--firm-color);
-  box-shadow: 0 0 0 1px var(--firm-color);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 .table-action-link {
   font-weight: 500;
@@ -601,6 +651,144 @@ button {
 .table-action-link.delete:disabled { color: var(--gray-400); cursor: not-allowed; }
 .table-action-link.student { color: var(--student-color); }
 .table-action-link.student:hover { color: var(--student-hover-color); }
+
+/* FIRM DASHBOARD SPECIFIC */
+.firm-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+@media (min-width: 640px) { .firm-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .firm-stats-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+.stat-card.highlight {
+    border-color: var(--firm-light);
+    background: linear-gradient(to bottom right, white, var(--firm-light));
+}
+
+.stat-label { font-size: 0.875rem; color: var(--gray-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-size: 2rem; font-weight: 800; color: var(--gray-800); margin-top: 0.5rem; line-height: 1; }
+.stat-desc { font-size: 0.8rem; color: var(--gray-400); margin-top: 0.5rem; }
+.stat-icon-container {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+}
+
+.dashboard-action-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+@media (min-width: 768px) {
+    .dashboard-action-bar {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+.dashboard-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-800);
+}
+.action-bar-right {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+@media (min-width: 768px) { .action-bar-right { width: auto; } }
+
+/* Profile Styles */
+.profile-card {
+    padding: 2.5rem;
+}
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+.profile-avatar-placeholder {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+}
+.profile-avatar-placeholder.firm { background-color: var(--firm-color); color: white; }
+.profile-name {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--gray-900);
+}
+.profile-role {
+    font-size: 1rem;
+    color: var(--gray-500);
+    font-weight: 500;
+}
+.profile-details-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+@media (min-width: 640px) { .profile-details-grid { grid-template-columns: 1fr 1fr; } }
+
+.sub-details-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    background-color: var(--gray-50);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--gray-200);
+}
+@media (min-width: 640px) { .sub-details-container { grid-template-columns: repeat(4, 1fr); } }
+
+.detail-item label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+.detail-item p {
+    font-size: 1rem;
+    color: var(--gray-800);
+    font-weight: 500;
+}
+
 
 /* FormDetailsPage */
 .form-details-page {
