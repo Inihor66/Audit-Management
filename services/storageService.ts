@@ -146,8 +146,7 @@ export const processSubscriptionRules = (): void => {
         if (user.subscription.status === 'active' && user.subscription.expiryDate) {
             const expiryTime = new Date(user.subscription.expiryDate);
             if (now > expiryTime) {
-                // Per user request: "after expire the plane the additional feature should be unlocked"
-                // This implies that even if the subscription time ends, the features (Unlimited Entries) persist.
+                // Per user request: "after the expriy the subcription additional feature should be locked"
                 
                 user.subscription = {
                     status: 'inactive', // Mark as inactive (expired)
@@ -155,19 +154,19 @@ export const processSubscriptionRules = (): void => {
                     startDate: null,
                     expiryDate: null,
                     entriesUsed: user.subscription.entriesUsed,
-                    allowedEntries: 'infinity', // Keep features UNLOCKED
+                    allowedEntries: ROLE_CONFIG[user.role].freeEntries, // Revert to free limits (Locked)
                 };
                 
                 user.notifications.push({
                     id: crypto.randomUUID(),
-                    message: `Your subscription period has ended, but your premium features (Unlimited Entries) remain unlocked.`,
-                    type: 'success',
+                    message: `Your subscription has expired. Premium features are now locked and entry limits apply. Please renew to continue enjoying unlimited access.`,
+                    type: 'warning',
                     read: false,
                     createdAt: now.toISOString(),
                 });
 
                 changed = true;
-                console.log(`[System] Expired subscription but kept features unlocked for user: ${user.email}`);
+                console.log(`[System] Expired subscription and locked features for user: ${user.email}`);
             }
         }
     });
