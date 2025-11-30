@@ -88,6 +88,36 @@ NOTE: If not approved within 2 hours, the system will automatically unlock the f
         }
     };
 
+    const sendUserConfirmationEmail = async () => {
+        const config = EMAILJS_SUBSCRIPTION_CONFIG;
+        if (!config.SERVICE_ID || !config.TEMPLATE_ID || !config.PUBLIC_KEY) {
+            return;
+        }
+
+        try {
+            await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    service_id: config.SERVICE_ID,
+                    template_id: config.TEMPLATE_ID,
+                    user_id: config.PUBLIC_KEY,
+                    template_params: {
+                        to_email: user.email,
+                        email: user.email,
+                        to_name: user.name,
+                        company_name: "Audit Managment app Presented by INIHOR",
+                        message: `Hello ${user.name},\n\nWe have received your payment screenshot for the ${plan.name} plan.\n\nThe admin team has been notified. If your subscription is not approved within 2 hours, it will be automatically activated.\n\nThank you for choosing us!`,
+                        content: `Payment Screenshot Received for ${plan.name}.`
+                    }
+                }),
+            });
+            console.log('User confirmation email sent successfully.');
+        } catch (e) {
+            console.error('Failed to send user confirmation email', e);
+        }
+    };
+
     const handleNotifyAdmin = async () => {
         if (!screenshot) {
             setError('Please upload a payment screenshot.');
@@ -137,6 +167,9 @@ NOTE: If not approved within 2 hours, the system will automatically unlock the f
         // Send Email to Main Admin
         await sendAdminNotificationEmail();
 
+        // Send Confirmation Email to User
+        await sendUserConfirmationEmail();
+
         setSendingEmail(false);
         setNotified(true);
     };
@@ -148,6 +181,8 @@ NOTE: If not approved within 2 hours, the system will automatically unlock the f
                 <p className="payment-notified-text">The admin has been notified at <strong>{CONTACT_INFO.email}</strong>.</p>
                 <div style={{backgroundColor: '#ecfdf5', padding: '1rem', borderRadius: '0.5rem', margin: '1rem 0', fontSize: '0.875rem', color: '#065f46'}}>
                     <strong>Note:</strong> If the admin does not manually confirm within <strong>2 hours</strong>, your subscription will be automatically activated.
+                    <br/><br/>
+                    A confirmation email has also been sent to <strong>{user.email}</strong>.
                 </div>
                 <button onClick={onPaymentNotified} className="payment-notified-button">Go to Dashboard</button>
              </div>
