@@ -25,6 +25,14 @@ function setItem<T,>(key: string, value: T): void {
     }
 }
 
+// Safe ID Generator
+export const generateId = (): string => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+};
+
 // --- User Management ---
 export const getUsers = (): User[] => getItem<User[]>(USERS_KEY, []);
 export const saveUsers = (users: User[]): void => setItem(USERS_KEY, users);
@@ -54,7 +62,7 @@ export const addUser = (newUser: Omit<User, 'id' | 'subscription' | 'notificatio
 
     const user: User = {
         ...newUser,
-        id: crypto.randomUUID(),
+        id: generateId(),
         pendingPaymentSS: null,
         notifications: [],
         isVerified: false, // Require email verification
@@ -129,7 +137,7 @@ export const processSubscriptionRules = (): void => {
                     user.paymentRequestDate = undefined;
                     
                     user.notifications.push({
-                        id: crypto.randomUUID(),
+                        id: generateId(),
                         message: `System Auto-Approval: Your ${planDetails.name} subscription is now active!`,
                         type: 'success',
                         read: false,
@@ -158,7 +166,7 @@ export const processSubscriptionRules = (): void => {
                 };
                 
                 user.notifications.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     message: `Your subscription has expired. Premium features are now locked and entry limits apply. Please renew to continue enjoying unlimited access.`,
                     type: 'warning',
                     read: false,
@@ -184,7 +192,7 @@ export const addForm = (newForm: Omit<FormData, 'id' | 'createdAt' | 'postEditFe
     const forms = getForms();
     const form: FormData = {
         ...newForm,
-        id: crypto.randomUUID(),
+        id: generateId(),
         createdAt: new Date().toISOString(),
         postEditFees: null,
         postEditTerms: null,
@@ -214,7 +222,7 @@ export const saveAdminNotifications = (notifications: AdminNotification[]): void
 export const addAdminNotification = (firm: User, ssDataUrl: string): void => {
     const notifications = getAdminNotifications();
     notifications.push({
-        id: crypto.randomUUID(),
+        id: generateId(),
         firmId: firm.id,
         firmName: firm.name,
         type: 'payment_ss',
