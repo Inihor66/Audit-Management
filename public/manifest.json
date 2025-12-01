@@ -1,12 +1,14 @@
 {
   "name": "Audit Flow Manager",
   "short_name": "AuditFlow",
+  "id": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#2563EB",
-  "description": "A multi-role application for firms, students, and admins.",
-  "orientation": "portrait",
+  "description": "A multi-role application for firms, students, and admins to manage audit forms and assignments.",
+  "orientation": "portrait-primary",
+  "categories": ["business", "finance", "productivity"],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -17,6 +19,12 @@
       "src": "/icon-512.png",
       "type": "image/png",
       "sizes": "512x512"
+    },
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
     }
   ]
 }
