@@ -1,23 +1,3 @@
-<!--
-README: How to Run and Payment Flow Simulation
-
-**How to Run:**
-1. This is a single-page React application built with static files (HTML, JS).
-2. You do not need to install any dependencies or run a build process.
-3. Simply open this `index.html` file in a modern web browser (like Chrome, Firefox, or Edge). The application will start automatically.
-4. All data is stored in your browser's `localStorage`. To reset the application, clear your browser's `localStorage` for this page.
-
-**Payment Flow Simulation:**
-The subscription payment flow is a simulation and does not involve real money. Here's how it works:
-1. **Firm User:** A user logged in as a 'Firm' can navigate to the "Manage Subscription" page from their dashboard.
-2. **Select Plan:** The firm selects a subscription plan (e.g., Monthly, Yearly).
-3. **Payment Instructions:** The app displays a static UPI ID for payment. This is for demonstration purposes only.
-4. **Upload Screenshot:** The firm is asked to upload a "payment screenshot." They can upload any image file.
-5. **Notify Admin:** After uploading, the firm clicks "Notify Admin." This action saves the uploaded image as a data URL in `localStorage` and creates a notification for the Admin.
-6. **Admin Confirmation:** An 'Admin' user logs in, sees the payment notification on their dashboard, and can view the uploaded screenshot.
-7. **Activate Subscription:** The Admin clicks a "Confirm Payment" button. This manually updates the firm's account in `localStorage`, activating their subscription, setting the plan details, and granting them unlimited form entries.
-8. **Firm Notification:** The firm receives an in-app notification confirming their subscription is active.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,29 +5,21 @@ The subscription payment flow is a simulation and does not involve real money. H
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audit Flow Manager</title>
     <link rel="stylesheet" href="/style.css">
-    <link rel="manifest" href="/manifest.json" />
+    <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
-
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/service-worker.js")
-    .then(() => console.log("SW Registered"))
-    .catch(err => console.log("SW Error", err));
-}
-</script>
-
+    <meta name="theme-color" content="#2563EB">
+    <link rel="apple-touch-icon" href="/icon-192.png">
 <script type="importmap">
-    
 {
   "imports": {
+    "vite": "https://aistudiocdn.com/vite@^7.2.4",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <div id="root"></div>
