@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Generator</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f3f4f6; gap: 20px; }
+        .preview { margin: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        button { padding: 12px 24px; background: #2563EB; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
+        button:hover { background: #1D4ED8; transform: scale(1.05); }
+        h1 { color: #1F2937; }
+        p { color: #4B5563; max-width: 400px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>App Icon Generator</h1>
+    <p>This tool helps you generate the PNG files required for the Android APK/PWA. The icon below is rendered from <code>public/icon.svg</code>.</p>
+    
+    <!-- Display SVG -->
+    <img id="sourceSvg" src="icon.svg" width="256" height="256" class="preview" alt="Icon Preview">
+    
+    <div style="display: flex; gap: 10px;">
+        <button onclick="downloadIcon(192)">Download 192px PNG</button>
+        <button onclick="downloadIcon(512)">Download 512px PNG</button>
+    </div>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <script>
+        function downloadIcon(size) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = document.getElementById('sourceSvg');
+            
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Draw SVG to Canvas
+            ctx.drawImage(img, 0, 0, size, size);
+            
+            // Convert to PNG URL
+            const pngUrl = canvas.toDataURL('image/png');
+            
+            // Trigger Download
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = pngUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
