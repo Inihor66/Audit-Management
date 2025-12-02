@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
 import { User, SubscriptionPlan, Role } from '../../types';
-import { SUBSCRIPTION_PLANS, CONTACT_INFO, ROLE_CONFIG, EMAILJS_SUBSCRIPTION_CONFIG } from '../../constants';
+import { SUBSCRIPTION_PLANS, CONTACT_INFO, EMAILJS_SUBSCRIPTION_CONFIG } from '../../constants';
 import * as storage from '../../services/storageService';
-import { WhatsAppIcon } from '../../components/icons/WhatsAppIcon';
 import { CheckIcon } from '../../components/icons/CheckIcon';
 
 const UNIVERSAL_EMAIL_TEMPLATE = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; color: #333;">
@@ -318,7 +317,6 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
 // Main Component
 const ManageSubscription = ({ user, refreshUser, onBack }: ManageSubscriptionProps) => {
     const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-    const roleClass = user.role.toLowerCase();
 
     if (selectedPlan) {
         return (
