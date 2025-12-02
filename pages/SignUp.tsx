@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Role, User } from '../types';
+import { Role } from '../types';
 import * as storage from '../services/storageService';
 
 interface SignUpProps {
@@ -76,11 +76,14 @@ const SignUp = ({ onNavigate }: SignUpProps) => {
         }
     };
 
+    const roleClass = role.toLowerCase();
+
     // Render the single sign-up form
     return (
         <div className="auth-page" ref={topRef}>
             <div className="auth-container">
                 <h2 className="auth-title">Create your account</h2>
+                <p style={{textAlign: 'center', color: '#6b7280', marginTop: '0.5rem'}}>Join Audit Flow Manager today</p>
             </div>
 
             <div className="auth-form-container">
@@ -91,25 +94,45 @@ const SignUp = ({ onNavigate }: SignUpProps) => {
                             <div style={{marginTop: '0.25rem'}}>{error}</div>
                         </div>
                     )}
+                    
+                    {/* Modern Segmented Control for Role */}
+                    <div className="form-group">
+                        <label className="form-label">I am a...</label>
+                        <div className="segmented-control">
+                            <button 
+                                type="button"
+                                className={`segment-option ${role === Role.FIRM ? 'active firm' : ''}`}
+                                onClick={() => setRole(Role.FIRM)}
+                            >
+                                Firm
+                            </button>
+                            <button 
+                                type="button"
+                                className={`segment-option ${role === Role.STUDENT ? 'active student' : ''}`}
+                                onClick={() => setRole(Role.STUDENT)}
+                            >
+                                Student
+                            </button>
+                            <button 
+                                type="button"
+                                className={`segment-option ${role === Role.ADMIN ? 'active admin' : ''}`}
+                                onClick={() => setRole(Role.ADMIN)}
+                            >
+                                Admin
+                            </button>
+                        </div>
+                    </div>
+
                     <form className="auth-form" onSubmit={handleFormSubmit}>
                         <div className="form-group">
-                            <label htmlFor="role" className="form-label">I am a...</label>
-                            <select id="role" name="role" value={role} onChange={(e) => { setRole(e.target.value as Role); setError(''); }} className="form-select">
-                                <option value={Role.FIRM}>Firm</option>
-                                <option value={Role.STUDENT}>Student</option>
-                                <option value={Role.ADMIN}>Admin</option>
-                            </select>
-                        </div>
-
-                        <div className="form-group">
                             <label htmlFor="name" className="form-label">{role === Role.FIRM ? 'Firm Name' : 'Full Name'}</label>
-                            <input id="name" name="name" type="text" value={formData.name} required onChange={handleInputChange} className="form-input" placeholder={role === Role.FIRM ? "Enter firm name" : "Enter your full name"} />
+                            <input id="name" name="name" type="text" value={formData.name} required onChange={handleInputChange} className="form-input" placeholder={role === Role.FIRM ? "e.g., K.P. Associates" : "e.g., John Doe"} />
                         </div>
                         
                         {(role === Role.FIRM || role === Role.ADMIN) && (
                             <div className="form-group">
                                 <label htmlFor="location" className="form-label">Location</label>
-                                <input id="location" name="location" type="text" value={formData.location} required onChange={handleInputChange} className="form-input" placeholder="City or Region" />
+                                <input id="location" name="location" type="text" value={formData.location} required onChange={handleInputChange} className="form-input" placeholder="e.g., Mumbai, Maharashtra" />
                             </div>
                         )}
                         
@@ -149,8 +172,8 @@ const SignUp = ({ onNavigate }: SignUpProps) => {
                             <input id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} required onChange={handleInputChange} className="form-input" placeholder="••••••••" />
                         </div>
 
-                        <div>
-                            <button type="submit" className={`submit-button ${role.toLowerCase()}`}>
+                        <div style={{marginTop: '0.5rem'}}>
+                            <button type="submit" className={`submit-button ${roleClass}`}>
                                 Create Account
                             </button>
                         </div>
@@ -163,8 +186,7 @@ const SignUp = ({ onNavigate }: SignUpProps) => {
                         <button 
                             type="button"
                             onClick={() => onNavigate('welcome')} 
-                            className={`outline-button ${role.toLowerCase()}`} 
-                            style={{marginTop: '0.5rem'}}
+                            className={`outline-button`} 
                         >
                             Back to role selection
                         </button>
