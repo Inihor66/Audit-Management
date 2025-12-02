@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Role, User } from '../types';
 import * as storage from '../services/storageService';
@@ -103,10 +104,10 @@ const Login = ({ onLogin, onNavigate, role }: LoginProps) => {
           </div>
 
           <div className="auth-footer">
-            <button onClick={() => onNavigate('signup')} className="auth-footer-link">
+            <button onClick={() => onNavigate('signup')} className="outline-button">
               Create a new account
             </button>
-            <button onClick={() => onNavigate('welcome')} className="auth-footer-link">
+            <button onClick={() => onNavigate('welcome')} className="text-link-button">
               Back to role selection
             </button>
           </div>
