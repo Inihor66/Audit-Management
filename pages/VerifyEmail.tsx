@@ -41,14 +41,26 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
             } else {
                 // Logic to send email automatically ONCE
                 if (emailSentRef.current !== userId) {
-                     // Check if keys exist
-                     if (config.serviceId && config.templateId && config.publicKey) {
+                     // Check if keys exist and ARE NOT placeholders
+                     const isValidConfig = 
+                        config.serviceId && !config.serviceId.includes('xxxx') &&
+                        config.templateId && !config.templateId.includes('xxxx') &&
+                        config.publicKey;
+
+                     if (isValidConfig) {
                         emailSentRef.current = userId; // Mark as sent for this ID
                         sendEmail(foundUser, foundUser.verificationCode || 'ERROR');
                      } else {
-                        setStatus('error');
-                        setStatusMessage('EmailJS not configured. Please check your keys below.');
-                        setShowConfig(true);
+                        // Silent fail / prompt for config if missing
+                        if (!config.serviceId) {
+                            setStatus('error');
+                            setStatusMessage('EmailJS not configured. Please set your Service ID below.');
+                            setShowConfig(true);
+                        } else if (config.serviceId.includes('xxxx')) {
+                            setStatus('error');
+                            setStatusMessage('Invalid Placeholder Keys detected. Please enter real keys below.');
+                            setShowConfig(true);
+                        }
                      }
                 }
             }
@@ -74,6 +86,13 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
             setStatusMessage('Missing EmailJS Configuration. Please set keys in the code or below.');
             setShowConfig(true);
             return;
+        }
+        
+        if (config.serviceId.includes('xxxx') || config.templateId.includes('xxxx')) {
+             setStatus('error');
+             setStatusMessage('You are using placeholder keys (containing "xxxx"). Please enter valid keys from your EmailJS dashboard.');
+             setShowConfig(true);
+             return;
         }
 
         setStatus('sending');
@@ -118,10 +137,14 @@ const VerifyEmailPage = ({ userId, onNavigate }: VerifyEmailPageProps) => {
         } catch (err: any) {
             console.error('Email Send Error:', err);
             setStatus('error');
-            if (err.message && err.message.includes('recipients address is empty')) {
+            
+            const errorMessage = err.message || '';
+            if (errorMessage.includes('The service ID not found')) {
+                 setStatusMessage('Error: Service ID not found. Please check the Service ID in the configuration below.');
+            } else if (errorMessage.includes('recipients address is empty')) {
                  setStatusMessage(`Error: Recipient Empty. Go to EmailJS Dashboard > Email Template. Set "To Email" field to {{to_email}}`);
             } else {
-                 setStatusMessage(`Failed to send email. Check console for details.`);
+                 setStatusMessage(`Failed to send email: ${errorMessage.substring(0, 50)}...`);
             }
             setShowConfig(true); 
             // Allow retry
