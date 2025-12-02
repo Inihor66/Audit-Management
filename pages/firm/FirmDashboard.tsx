@@ -105,79 +105,112 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
 
   // --- Render Functions ---
 
-  const renderProfile = () => (
+  const renderProfile = () => {
+    // Calculate percentage for usage bar
+    const total = user.subscription.allowedEntries === 'infinity' ? 100 : user.subscription.allowedEntries;
+    const used = user.subscription.entriesUsed;
+    const percentage = user.subscription.allowedEntries === 'infinity' ? 100 : Math.min(100, (used / total) * 100);
+    const isInfinity = user.subscription.allowedEntries === 'infinity';
+
+    return (
     <div className="max-w-4xl mx-auto">
         <button onClick={() => setView('dashboard')} className="back-link firm mb-4">← Back to Dashboard</button>
-        <div className="card profile-card">
-            <div className="profile-header">
-                <div className="profile-avatar-placeholder firm">
-                   {user.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="profile-info">
-                    <h2 className="profile-name">{user.name}</h2>
-                    <p className="profile-role">Firm Account</p>
-                </div>
-            </div>
-            
-            <div className="profile-details-grid">
-                <div className="detail-item">
-                    <label>Firm Name</label>
-                    <p>{user.name}</p>
-                </div>
-                <div className="detail-item">
-                    <label>Location</label>
-                    <p>{user.location || 'Not set'}</p>
-                </div>
-                <div className="detail-item">
-                    <label>Email</label>
-                    <p>{user.email}</p>
-                </div>
-                <div className="detail-item">
-                    <label>Account ID</label>
-                    <p className="font-mono text-sm">{user.id.slice(0, 8)}...</p>
-                </div>
-            </div>
-
-            <div className="card-divider"></div>
-            
-            <div className="subscription-section mt-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-800">Subscription Status</h3>
-                    <span className={`status-badge ${user.subscription.status === 'active' || isUnlimitedButExpired ? 'green' : 'yellow'}`}>
-                        {user.subscription.status === 'active' ? 'ACTIVE' : (isUnlimitedButExpired ? 'UNLOCKED' : 'INACTIVE')}
-                    </span>
+        
+        <div className="profile-container-grid">
+            {/* Left Sidebar: Identity */}
+            <div className="profile-sidebar">
+                <div className="profile-identity-card">
+                    <div className="identity-banner firm"></div>
+                    <div className="identity-avatar firm">
+                        {user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="identity-info">
+                        <h2>{user.name}</h2>
+                        <span className="user-role-badge firm">Firm Account</span>
+                    </div>
+                    <div className="identity-stats">
+                        <div className="id-stat">
+                            <strong>{totalForms}</strong>
+                            <span>Total Audits</span>
+                        </div>
+                        <div className="id-stat">
+                            <strong>{filledForms}</strong>
+                            <span>Completed</span>
+                        </div>
+                    </div>
                 </div>
                 
-                <div className="sub-details-container">
-                    <div className="detail-item">
-                        <label>Current Plan</label>
-                        <p className="capitalize font-semibold text-firm-600">
-                             {isUnlimitedButExpired ? 'Legacy (Unlocked)' : (user.subscription.plan ? user.subscription.plan.replace('_', ' ') : 'Free Plan')}
-                        </p>
-                    </div>
-                    <div className="detail-item">
-                        <label>Entries Used</label>
-                        <p>{user.subscription.entriesUsed}</p>
-                    </div>
-                    <div className="detail-item">
-                        <label>Entry Allowance</label>
-                        <p>{user.subscription.allowedEntries === 'infinity' ? 'Unlimited' : user.subscription.allowedEntries}</p>
-                    </div>
-                    <div className="detail-item">
-                        <label>Expiry Date</label>
-                        <p>{user.subscription.expiryDate ? new Date(user.subscription.expiryDate).toLocaleDateString() : 'No Expiry'}</p>
+                <div className="profile-sidebar-actions">
+                    <button onClick={onLogout} className="sidebar-action-btn logout">
+                        Log Out
+                    </button>
+                </div>
+            </div>
+
+            {/* Right Content: Details */}
+            <div className="profile-main">
+                <div className="profile-section-card">
+                    <h3 className="section-title">Firm Details</h3>
+                    <div className="details-grid-modern">
+                         <div className="detail-box">
+                            <label>Firm Name</label>
+                            <p>{user.name}</p>
+                         </div>
+                         <div className="detail-box">
+                            <label>Location</label>
+                            <p>{user.location || 'Not set'}</p>
+                         </div>
+                         <div className="detail-box">
+                            <label>Email Address</label>
+                            <p>{user.email}</p>
+                         </div>
+                         <div className="detail-box">
+                            <label>System ID</label>
+                            <p className="font-mono text-gray-500 text-sm">{user.id.slice(0, 8)}...</p>
+                         </div>
                     </div>
                 </div>
 
-                <div className="mt-6 flex gap-4">
-                    <button onClick={() => setView('manage_subscription')} className="card-button firm w-auto px-6">
-                        Manage Subscription
-                    </button>
+                <div className="profile-section-card">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="section-title mb-0">Subscription & Usage</h3>
+                        <span className={`status-badge ${user.subscription.status === 'active' || isUnlimitedButExpired ? 'green' : 'yellow'}`}>
+                            {user.subscription.status === 'active' ? 'ACTIVE' : (isUnlimitedButExpired ? 'UNLOCKED' : 'INACTIVE')}
+                        </span>
+                    </div>
+
+                    <div className="usage-container">
+                        <div className="usage-header">
+                            <span className="plan-name">
+                                {isUnlimitedButExpired ? 'Legacy (Unlocked)' : (user.subscription.plan ? user.subscription.plan.replace('_', ' ') + ' Plan' : 'Free Plan')}
+                            </span>
+                            <span className="usage-text">
+                                {used} / {isInfinity ? '∞' : total} Entries Used
+                            </span>
+                        </div>
+                        <div className="usage-bar-bg">
+                            <div 
+                                className={`usage-bar-fill ${isInfinity ? 'infinity-gradient' : ''}`} 
+                                style={{width: `${percentage}%`}}
+                            ></div>
+                        </div>
+                        <p className="expiry-text">
+                            {user.subscription.expiryDate 
+                                ? `Valid until ${new Date(user.subscription.expiryDate).toLocaleDateString()}` 
+                                : 'No expiration date'}
+                        </p>
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                        <button onClick={() => setView('manage_subscription')} className="upgrade-btn-small">
+                            {user.subscription.plan === 'yearly' ? 'Manage Plan' : 'Upgrade Plan'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-  );
+  )};
 
   const renderDashboard = () => (
     <div className="firm-dashboard-content">
