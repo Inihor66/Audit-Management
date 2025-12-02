@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Role, User } from './types';
 import * as storage from './services/storageService';
-import { ROLE_CONFIG } from './constants';
 import { BriefcaseIcon } from './components/icons/BriefcaseIcon';
 import { GraduationCapIcon } from './components/icons/GraduationCapIcon';
 import { ShieldCheckIcon } from './components/icons/ShieldCheckIcon';
