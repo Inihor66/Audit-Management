@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import * as storage from '../services/storageService';
 import { User, Role } from '../types';
 import { EMAILJS_VERIFY_CONFIG } from '../constants';
