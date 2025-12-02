@@ -320,7 +320,7 @@ input, select, textarea {
   text-align: left;
 }
 
-.form-input {
+.form-input, .form-select {
   width: 100%;
   padding: 0.625rem 0.875rem;
   border: 1px solid var(--gray-300);
@@ -328,12 +328,26 @@ input, select, textarea {
   font-size: 0.95rem;
   color: var(--gray-900);
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  background-color: white;
 }
 
-.form-input:focus {
+.form-input:focus, .form-select:focus, .form-textarea:focus {
   outline: none;
   border-color: var(--indigo-500);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.375rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.15s;
+  color: var(--gray-900);
 }
 
 .submit-button {
@@ -354,6 +368,54 @@ input, select, textarea {
 .submit-button.student:hover { background-color: var(--student-hover-color); }
 .submit-button.admin { background-color: var(--admin-color); }
 .submit-button.admin:hover { background-color: var(--admin-hover-color); }
+
+.outline-button {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.375rem;
+  background: white;
+  color: var(--gray-700);
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+  transition: all 0.2s;
+}
+.outline-button:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-400);
+  color: var(--gray-900);
+}
+
+.text-link-button {
+  background: none;
+  border: none;
+  color: var(--gray-500);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+.text-link-button:hover {
+  text-decoration: underline;
+  color: var(--gray-800);
+}
+
+.auth-footer {
+  margin-top: 1.5rem;
+}
+
+.auth-divider {
+  position: relative;
+  margin-top: 1.5rem;
+}
+.auth-divider-line-container { position: absolute; inset: 0; display: flex; align-items: center; }
+.auth-divider-line { width: 100%; border-top: 1px solid var(--gray-300); }
+.auth-divider-text-container { position: relative; display: flex; justify-content: center; font-size: 0.875rem; }
+.auth-divider-text { background-color: white; padding: 0 0.5rem; color: var(--gray-500); }
 
 /* Segmented Control */
 .segmented-control {
