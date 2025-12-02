@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { User, FormData, Role } from '../../types';
 import * as storage from '../../services/storageService';
 import { DashboardLayout } from '../../components/DashboardLayout';
@@ -23,8 +23,6 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
   const [formToEdit, setFormToEdit] = useState<FormData | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const roleClass = user.role.toLowerCase();
   
   // Stats calculations
   const entriesLeft = user.subscription.allowedEntries === 'infinity' ? 'Unlimited' : user.subscription.allowedEntries - user.subscription.entriesUsed;
