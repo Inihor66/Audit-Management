@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'audit-flow-v3-profile-upgrade';
+const CACHE_NAME = 'audit-flow-v4-design-fix';
 const urlsToCache = [
   '/',
   '/index.html',
