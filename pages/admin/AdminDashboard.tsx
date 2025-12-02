@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { User, FormData, AdminNotification, SubscriptionPlan, Role } from '../../types';
 import * as storage from '../../services/storageService';
-import { SUBSCRIPTION_PLANS, ROLE_CONFIG, EMAILJS_SUBSCRIPTION_CONFIG } from '../../constants';
+import { SUBSCRIPTION_PLANS, EMAILJS_SUBSCRIPTION_CONFIG } from '../../constants';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Modal } from '../../components/Modal';
 import ManageSubscription from '../firm/ManageSubscription';
