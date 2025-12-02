@@ -935,6 +935,7 @@ button {
     z-index: 10;
 }
 .identity-avatar.firm { color: var(--firm-color); }
+.identity-avatar.admin { color: var(--admin-color); }
 
 .identity-info {
     padding: 1rem 1.5rem 1.5rem;
@@ -1397,4 +1398,3 @@ button {
 }
 .final-notify-btn:hover { background-color: var(--firm-hover-color); transform: translateY(-2px); }
 .final-notify-btn:disabled { background-color: var(--gray-400); cursor: not-allowed; transform: none; box-shadow: none; }
-
