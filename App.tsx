@@ -78,7 +78,7 @@ const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, options?: { ro
                             </div>
                             <div className="card-content">
                                 <h3>Student</h3>
-                                <p>Find articleship & audits</p>
+                                <p>Find audits</p>
                             </div>
                             <div className="card-arrow">&rarr;</div>
                         </button>
