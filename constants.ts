@@ -30,16 +30,17 @@ export const CONTACT_INFO = {
 };
 
 // EmailJS Configuration for VERIFICATION (Sign Up)
+// NOTE: These are empty by default to force the user to input them in the UI.
+// If you have your keys, you can paste them here to make them permanent.
 export const EMAILJS_VERIFY_CONFIG = {
-  SERVICE_ID: 'service_8d4p42q', 
-  TEMPLATE_ID: 'template_vtbvqka', 
+  SERVICE_ID: '', 
+  TEMPLATE_ID: '', 
   PUBLIC_KEY: 'ZXEQmcCT1ogbLL32A', 
 };
 
 // EmailJS Configuration for SUBSCRIPTION (Payment Alerts & Admin Approvals)
-// Using the same configuration as Verification to ensure valid keys are used
 export const EMAILJS_SUBSCRIPTION_CONFIG = {
-  SERVICE_ID: 'service_8d4p42q',
-  TEMPLATE_ID: 'template_vtbvqka',
+  SERVICE_ID: '',
+  TEMPLATE_ID: '',
   PUBLIC_KEY: 'ZXEQmcCT1ogbLL32A', 
 };
