@@ -1,4 +1,5 @@
-const CACHE_NAME = 'audit-flow-v1';
+
+const CACHE_NAME = 'audit-flow-v3-profile-upgrade';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -7,6 +8,7 @@ const urlsToCache = [
 
 // Install SW
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Force activate new SW immediately
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
