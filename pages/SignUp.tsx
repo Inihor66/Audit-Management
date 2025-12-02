@@ -180,13 +180,13 @@ const SignUp = ({ onNavigate }: SignUpProps) => {
                     </form>
 
                     <div className="auth-footer">
-                        <button onClick={() => onNavigate('login', { role })} className="auth-footer-link" style={{marginTop: '0.5rem'}}>
+                        <button onClick={() => onNavigate('login', { role })} className="outline-button" style={{marginTop: '1rem'}}>
                             Already have an account? Log in
                         </button>
                         <button 
                             type="button"
                             onClick={() => onNavigate('welcome')} 
-                            className={`outline-button`} 
+                            className="text-link-button" 
                         >
                             Back to role selection
                         </button>
