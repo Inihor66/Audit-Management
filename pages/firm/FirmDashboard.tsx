@@ -183,36 +183,51 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
 
   const renderDashboard = () => (
     <div className="firm-dashboard-content">
-        {/* Welcome & Stats */}
-        <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome, {user.name}</h1>
-            <p className="text-gray-600 mb-6">Here is an overview of your audit activities.</p>
-            
-            <div className="firm-stats-grid">
-                <div className="stat-card">
-                    <div className="stat-label">Total Forms</div>
-                    <div className="stat-value">{totalForms}</div>
-                    <div className="stat-icon-container bg-blue-100 text-blue-600">
-                        <BriefcaseIcon className="w-6 h-6" />
-                    </div>
+        {/* Modern Gradient Banner */}
+        <div className="dashboard-welcome-banner">
+            <div className="banner-shape one"></div>
+            <div className="banner-shape two"></div>
+            <div className="dashboard-welcome-content">
+                <h1 className="dashboard-welcome-title">Welcome back, {user.name}</h1>
+                <p className="dashboard-welcome-text">Manage your audit forms, track student submissions, and streamline your workflow all in one place.</p>
+            </div>
+        </div>
+        
+        {/* Stats Grid - Overlapping the banner */}
+        <div className="firm-stats-grid">
+            <div className="stat-card">
+                <div className="stat-label">Total Forms</div>
+                <div className="stat-value">{totalForms}</div>
+                <div className="stat-icon-container">
+                    <BriefcaseIcon className="w-8 h-8" />
                 </div>
-                <div className="stat-card">
-                    <div className="stat-label">Active / Open</div>
-                    <div className="stat-value">{activeForms}</div>
-                    <div className="stat-desc">Waiting for students</div>
+            </div>
+            <div className="stat-card">
+                <div className="stat-label">Active / Open</div>
+                <div className="stat-value">{activeForms}</div>
+                <div className="stat-desc">Waiting for students</div>
+                <div className="stat-icon-container">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                     </svg>
                 </div>
-                <div className="stat-card">
-                    <div className="stat-label">Completed</div>
-                    <div className="stat-value">{filledForms}</div>
-                    <div className="stat-desc">Forms filled by students</div>
+            </div>
+            <div className="stat-card">
+                <div className="stat-label">Completed</div>
+                <div className="stat-value">{filledForms}</div>
+                <div className="stat-desc">Forms filled by students</div>
+                <div className="stat-icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                 </div>
-                <div className="stat-card highlight">
-                    <div className="stat-label">Entries Left</div>
-                    <div className="stat-value text-firm-600">{entriesLeft}</div>
-                    <button onClick={() => setView('manage_subscription')} className="text-xs font-semibold text-firm-600 hover:underline mt-1">
-                        Upgrade Plan &rarr;
-                    </button>
-                </div>
+            </div>
+            <div className="stat-card highlight">
+                <div className="stat-label text-firm-600">Entries Left</div>
+                <div className="stat-value text-firm-600">{entriesLeft}</div>
+                <button onClick={() => setView('manage_subscription')} className="text-xs font-semibold text-firm-600 hover:underline mt-2 text-left">
+                    Upgrade Plan &rarr;
+                </button>
             </div>
         </div>
 
@@ -255,7 +270,7 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
                     <tbody>
                         {filteredForms.length > 0 ? filteredForms.map(form => (
                             <tr key={form.id}>
-                                <td style={{fontWeight: 500}}>{form.location}</td>
+                                <td>{form.location}</td>
                                 <td>{new Date(form.expectedDate).toLocaleDateString()}</td>
                                 <td>
                                     <span className={`status-badge ${form.isApproved ? (form.studentSubmission ? 'green' : 'blue') : 'yellow'}`}>
