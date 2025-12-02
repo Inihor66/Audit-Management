@@ -33,7 +33,7 @@ const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, options?: { ro
 
             <main className="landing-main">
                 <div className="hero-content">
-                    <div className="hero-badge">The #1 Platform for CAs</div>
+                    <div className="hero-badge">The #1 Platform for Freelancers CA's student</div>
                     <h1 className="hero-title">
                         Audit Management <br />
                         <span className="text-gradient">Reimagined.</span>
