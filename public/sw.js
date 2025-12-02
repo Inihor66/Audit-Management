@@ -1,6 +1,7 @@
 
 
-const CACHE_NAME = 'audit-flow-v6-design-fix';
+
+const CACHE_NAME = 'audit-flow-v7-welcome-redesign';
 const urlsToCache = [
   '/',
   '/index.html',
