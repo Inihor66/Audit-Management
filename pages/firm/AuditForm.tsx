@@ -116,7 +116,16 @@ const AuditForm = ({ user, onSuccess, onCancel, initialData }: AuditFormProps) =
           </div>
            <div className="form-group form-group-full">
             <label htmlFor="preEditTerms" className="form-label">Terms & Conditions</label>
-            <textarea name="preEditTerms" id="preEditTerms" value={formData.preEditTerms} onChange={handleInputChange} required className="form-textarea" rows={3}></textarea>
+            <textarea 
+                name="preEditTerms" 
+                id="preEditTerms" 
+                value={formData.preEditTerms} 
+                onChange={handleInputChange} 
+                required 
+                className="form-textarea" 
+                rows={5}
+                placeholder="Enter detailed terms regarding travel allowance, accommodation, reporting requirements, etc."
+            ></textarea>
           </div>
         </div>
         <div className="checkbox-group">
