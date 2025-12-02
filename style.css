@@ -40,6 +40,7 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 }
 
 *, *::before, *::after {
@@ -702,4 +703,315 @@ button {
 .stat-card:hover .stat-icon-container {
     background-color: var(--firm-light);
     color: var(--firm-color);
+}
+
+/* ==========================================================================
+   LANDING PAGE (WELCOME PAGE) STYLES
+   ========================================================================== */
+
+.landing-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+}
+
+.landing-nav {
+  height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  max-width: 80rem;
+  margin: 0 auto;
+  width: 100%;
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.nav-logo-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--firm-color);
+}
+.nav-logo-text {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--gray-900);
+  letter-spacing: -0.025em;
+}
+.nav-cta-button {
+  background-color: var(--gray-900);
+  color: white;
+  font-weight: 600;
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+.nav-cta-button:hover {
+  background-color: var(--gray-800);
+  transform: translateY(-1px);
+}
+
+.landing-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 80rem;
+  margin: 0 auto;
+  width: 100%;
+  padding: 2rem 1.5rem;
+  gap: 3rem;
+}
+@media (min-width: 1024px) {
+  .landing-main {
+    flex-direction: row;
+    align-items: center;
+    padding: 4rem 1.5rem;
+    gap: 4rem;
+  }
+}
+
+.hero-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.hero-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: var(--firm-light);
+  color: var(--firm-color);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  border: 1px solid #dbeafe;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--gray-900);
+  letter-spacing: -0.03em;
+  margin: 0 0 1rem 0;
+}
+@media (min-width: 768px) {
+  .hero-title { font-size: 3.5rem; }
+}
+.text-gradient {
+  background: linear-gradient(135deg, var(--firm-color), #2563EB);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+  font-size: 1.125rem;
+  color: var(--gray-600);
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+  max-width: 32rem;
+}
+
+/* Role Selection Area */
+.role-selection-area {
+  width: 100%;
+}
+.role-select-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.landing-role-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .landing-role-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .landing-role-grid {
+    grid-template-columns: 1fr; /* Stack on large left column */
+  }
+}
+
+.landing-role-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 0.75rem;
+  background-color: white;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.landing-role-card:hover {
+  border-color: var(--firm-color);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+  transform: translateY(-2px);
+}
+
+.role-icon-wrapper {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  color: white;
+  flex-shrink: 0;
+}
+.role-icon-wrapper svg { width: 1.5rem; height: 1.5rem; }
+.role-icon-wrapper.firm { background-color: var(--firm-color); }
+.role-icon-wrapper.student { background-color: var(--student-color); }
+.role-icon-wrapper.admin { background-color: var(--admin-color); }
+
+.role-card-content { flex: 1; }
+.role-card-content h3 { margin: 0; font-size: 1rem; font-weight: 600; color: var(--gray-900); }
+.role-card-content p { margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--gray-500); }
+
+.arrow-icon {
+  font-size: 1.25rem;
+  color: var(--gray-400);
+  transition: transform 0.2s;
+}
+.landing-role-card:hover .arrow-icon {
+  transform: translateX(4px);
+  color: var(--firm-color);
+}
+
+/* Hero Visual (Abstract) */
+.hero-visual {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  min-height: 20rem;
+}
+
+.visual-background-shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.6;
+}
+.visual-background-shape.one {
+  width: 15rem;
+  height: 15rem;
+  background-color: #dbeafe;
+  top: 10%;
+  right: 10%;
+}
+.visual-background-shape.two {
+  width: 20rem;
+  height: 20rem;
+  background-color: #ede9fe;
+  bottom: 0%;
+  left: 10%;
+}
+
+.app-preview-card {
+  position: relative;
+  width: 100%;
+  max-width: 24rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  z-index: 10;
+  transform: rotate(-3deg);
+  transition: transform 0.5s ease;
+}
+.app-preview-card:hover { transform: rotate(0deg) scale(1.02); }
+
+.preview-header {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.preview-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; }
+.preview-dot.red { background-color: #fca5a5; }
+.preview-dot.yellow { background-color: #fcd34d; }
+.preview-dot.green { background-color: #86efac; }
+
+.preview-body { display: flex; gap: 1rem; }
+.preview-sidebar { width: 4rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.preview-main { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; }
+
+.preview-line { height: 0.5rem; background-color: var(--gray-200); border-radius: 0.25rem; }
+.preview-line.w-full { width: 100%; }
+.preview-line.w-70 { width: 70%; }
+.preview-line.w-80 { width: 80%; }
+
+.preview-hero-box {
+  width: 100%;
+  height: 6rem;
+  background: linear-gradient(135deg, #e0e7ff, #eff6ff);
+  border-radius: 0.75rem;
+}
+.preview-row { display: flex; gap: 0.5rem; }
+.preview-card-sm { flex: 1; height: 4rem; background-color: var(--gray-100); border-radius: 0.5rem; }
+.preview-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.preview-list-item { height: 2rem; background-color: white; border: 1px solid var(--gray-100); border-radius: 0.375rem; }
+
+.floating-badge {
+  position: absolute;
+  bottom: -1rem;
+  right: -2rem;
+  background-color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: float 4s ease-in-out infinite;
+}
+.floating-badge .badge-icon {
+  color: var(--admin-color);
+  width: 2rem;
+  height: 2rem;
+}
+.floating-badge .badge-title { font-weight: 700; font-size: 0.875rem; }
+.floating-badge .badge-sub { font-size: 0.75rem; color: var(--gray-500); }
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.landing-footer {
+  text-align: center;
+  padding: 2rem;
+  background-color: #fff;
+  border-top: 1px solid var(--gray-100);
+  color: var(--gray-500);
+  font-size: 0.875rem;
+}
+.footer-links {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  color: var(--gray-400);
 }
