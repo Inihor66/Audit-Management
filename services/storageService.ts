@@ -1,5 +1,5 @@
 
-import { User, FormData, AdminNotification, Role, Subscription, SubscriptionPlan } from '../types';
+import { User, FormData, AdminNotification, Role } from '../types';
 import { ROLE_CONFIG, SUBSCRIPTION_PLANS } from '../constants';
 
 const USERS_KEY = 'audit_flow_users';
