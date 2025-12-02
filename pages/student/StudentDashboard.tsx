@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+
+import { useState, useEffect, useMemo } from 'react';
 import { User, FormData, Role } from '../../types';
 import * as storage from '../../services/storageService';
 import { DashboardLayout } from '../../components/DashboardLayout';
@@ -11,7 +12,7 @@ interface StudentDashboardProps {
   onNavigate: (page: string, options?: { role?: Role; formId?: string; }) => void;
 }
 
-const StudentDashboard = ({ user, onLogout, refreshUser, onNavigate }: StudentDashboardProps) => {
+const StudentDashboard = ({ user, onLogout, onNavigate }: StudentDashboardProps) => {
     const [view, setView] = useState<'available' | 'reports'>('available');
     const [forms, setForms] = useState<FormData[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
