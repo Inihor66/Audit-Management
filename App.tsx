@@ -19,59 +19,95 @@ const FormDetailsPage = React.lazy(() => import('./pages/FormDetailsPage'));
 const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, options?: { role?: Role }) => void }) => {
     return (
         <div className="welcome-page">
-            <div className="welcome-background-shape"></div>
+            {/* Animated Background Elements */}
+            <div className="bg-shape shape-1"></div>
+            <div className="bg-shape shape-2"></div>
+            <div className="bg-shape shape-3"></div>
+
+            {/* Navbar */}
+            <nav className="landing-navbar">
+                <div className="logo-container">
+                    <div className="logo-icon">
+                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                    </div>
+                    <span className="logo-text">AuditFlow</span>
+                </div>
+                <button onClick={() => onNavigate('signup')} className="nav-signup-btn">
+                    Create Account
+                </button>
+            </nav>
             
             <div className="welcome-container">
                 <div className="welcome-header">
-                    <h1 className="welcome-title">Welcome to Audit Management</h1>
-                    <p className="welcome-subtitle">Choose your role to get started with the platform.</p>
+                    <span className="welcome-badge">The #1 Platform for CA Firms & Students</span>
+                    <h1 className="welcome-title">Streamline Your <br/><span className="gradient-text">Audit Workflow</span></h1>
+                    <p className="welcome-subtitle">
+                        Connect firms with talented students, manage assignments, and track payments in one secure, professional dashboard.
+                    </p>
                 </div>
 
-                <div className="welcome-role-grid">
-                    {/* Firm Button - Blue with Building */}
-                    <button 
-                        onClick={() => onNavigate('login', { role: Role.FIRM })} 
-                        className="welcome-role-btn firm"
-                    >
-                        <div className="welcome-icon-circle">
-                            <BuildingIcon className="w-8 h-8" />
-                        </div>
-                        <span className="role-btn-text">Login as Firm</span>
-                    </button>
+                <div className="role-selection-area">
+                    <p className="role-select-label">Select your portal to login</p>
+                    <div className="welcome-role-grid">
+                        {/* Firm Button */}
+                        <button 
+                            onClick={() => onNavigate('login', { role: Role.FIRM })} 
+                            className="welcome-role-card firm"
+                        >
+                            <div className="card-icon firm">
+                                <BuildingIcon className="w-6 h-6" />
+                            </div>
+                            <div className="card-content">
+                                <h3>CA Firm</h3>
+                                <p>Post work & manage audits</p>
+                            </div>
+                            <div className="card-arrow">&rarr;</div>
+                        </button>
 
-                    {/* Student Button - Orange with Graduation Cap */}
-                    <button 
-                        onClick={() => onNavigate('login', { role: Role.STUDENT })} 
-                        className="welcome-role-btn student"
-                    >
-                        <div className="welcome-icon-circle">
-                            <GraduationCapIcon className="w-8 h-8" />
-                        </div>
-                        <span className="role-btn-text">Login as Student</span>
-                    </button>
+                        {/* Student Button */}
+                        <button 
+                            onClick={() => onNavigate('login', { role: Role.STUDENT })} 
+                            className="welcome-role-card student"
+                        >
+                            <div className="card-icon student">
+                                <GraduationCapIcon className="w-6 h-6" />
+                            </div>
+                            <div className="card-content">
+                                <h3>Student</h3>
+                                <p>Find articleship & audits</p>
+                            </div>
+                            <div className="card-arrow">&rarr;</div>
+                        </button>
 
-                    {/* Admin Button - Green with Briefcase */}
-                    <button 
-                        onClick={() => onNavigate('login', { role: Role.ADMIN })} 
-                        className="welcome-role-btn admin"
-                    >
-                        <div className="welcome-icon-circle">
-                            <BriefcaseIcon className="w-8 h-8" />
-                        </div>
-                        <span className="role-btn-text">Login as Admin</span>
-                    </button>
-                </div>
-
-                <div className="welcome-footer">
-                    <p>New to the platform?</p>
-                    <button onClick={() => onNavigate('signup')} className="welcome-signup-btn">
-                        Sign Up
-                    </button>
+                        {/* Admin Button */}
+                        <button 
+                            onClick={() => onNavigate('login', { role: Role.ADMIN })} 
+                            className="welcome-role-card admin"
+                        >
+                            <div className="card-icon admin">
+                                <BriefcaseIcon className="w-6 h-6" />
+                            </div>
+                            <div className="card-content">
+                                <h3>Admin</h3>
+                                <p>System administration</p>
+                            </div>
+                            <div className="card-arrow">&rarr;</div>
+                        </button>
+                    </div>
                 </div>
             </div>
             
-            <footer className="simple-footer">
-                &copy; {new Date().getFullYear()} Audit Flow Manager. All rights reserved.
+            <footer className="landing-footer">
+                <p>&copy; {new Date().getFullYear()} Audit Flow Manager. Secure. Efficient. Reliable.</p>
+                <div className="footer-links">
+                    <button className="text-link">Privacy Policy</button>
+                    <button className="text-link">Terms of Service</button>
+                    <button className="text-link">Support</button>
+                </div>
             </footer>
         </div>
     );
