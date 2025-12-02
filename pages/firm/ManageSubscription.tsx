@@ -6,7 +6,6 @@ import * as storage from '../../services/storageService';
 import { WhatsAppIcon } from '../../components/icons/WhatsAppIcon';
 import { CheckIcon } from '../../components/icons/CheckIcon';
 
-// Universal Email Template Code
 const UNIVERSAL_EMAIL_TEMPLATE = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; color: #333;">
   <div style="background-color: #2563EB; padding: 20px; text-align: center;">
     <h2 style="color: white; margin: 0;">{{#if verification_code}}Verify Email{{else}}{{#if payment_screenshot}}Payment Action{{else}}Notification{{/if}}{{/if}}</h2>
@@ -42,13 +41,15 @@ interface PaymentFlowProps {
     onBack: () => void;
 }
 
+// Modern Payment Checkout Component
 const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps) => {
     const [screenshot, setScreenshot] = useState<string | null>(null);
+    const [fileName, setFileName] = useState<string>('');
     const [error, setError] = useState('');
     const [notified, setNotified] = useState(false);
     const [sendingEmail, setSendingEmail] = useState(false);
     
-    // Email Config State for fallback/manual entry
+    // Email Config State
     const [emailConfig, setEmailConfig] = useState({
         serviceId: EMAILJS_SUBSCRIPTION_CONFIG.SERVICE_ID,
         templateId: EMAILJS_SUBSCRIPTION_CONFIG.TEMPLATE_ID,
@@ -57,14 +58,12 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
     const [showConfig, setShowConfig] = useState(false);
     const [showInstructions, setShowInstructions] = useState(false);
 
-    const roleClass = user.role.toLowerCase();
-
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Check file size (limit to ~200KB for EmailJS best results)
+            setFileName(file.name);
             if (file.size > 200000) {
-                setError('File too large. Please upload an image smaller than 200KB for email delivery.');
+                setError('File too large. Please upload < 200KB for email delivery.');
                 return;
             }
             const reader = new FileReader();
@@ -72,64 +71,46 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
                 setScreenshot(reader.result as string);
                 setError('');
             };
-            reader.onerror = () => {
-                setError('Failed to read file.');
-            };
             reader.readAsDataURL(file);
         }
     };
 
     const sendAdminNotificationEmail = async () => {
         if (!emailConfig.serviceId || !emailConfig.templateId || !emailConfig.publicKey) {
-            console.warn('EmailJS not configured, skipping admin email.');
-            throw new Error('Configuration Missing');
+             // Fallback: If config missing, we might still proceed if user is admin or logic allows, but here we throw to trigger manual config
+             throw new Error('Configuration Missing');
         }
-
-        try {
-            await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    service_id: emailConfig.serviceId,
-                    template_id: emailConfig.templateId,
-                    user_id: emailConfig.publicKey,
-                    template_params: {
-                        // Routing
-                        to_email: CONTACT_INFO.email, 
-                        email: CONTACT_INFO.email, // Backup
-                        to_name: 'Super Admin',
-                        from_name: 'Audit Flow System',
-                        company_name: "Audit Managment app Presented by INIHOR",
-                        reply_to: user.email,
-                        
-                        // Data for Universal Template
-                        payment_screenshot: screenshot, // Triggers "Payment Action" view
-                        dashboard_link: window.location.origin, 
-                        
-                        user_name: user.name,
-                        user_email: user.email,
-                        user_role: user.role,
-                        plan_name: plan.name,
-                        plan_price: plan.price,
-                        date: new Date().toLocaleString(),
-
-                        message: `ACTION REQUIRED: Payment Verification for ${user.name}.`,
-                        content: `User ${user.name} has uploaded a payment screenshot for the ${plan.name} plan.`
-                    }
-                }),
-            });
-            console.log('Admin notification email sent successfully.');
-        } catch (e) {
-            console.error('Failed to send admin notification email', e);
-            throw e;
-        }
+        await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                service_id: emailConfig.serviceId,
+                template_id: emailConfig.templateId,
+                user_id: emailConfig.publicKey,
+                template_params: {
+                    to_email: CONTACT_INFO.email, 
+                    email: CONTACT_INFO.email,
+                    to_name: 'Super Admin',
+                    from_name: 'Audit Flow System',
+                    company_name: "Audit Managment app Presented by INIHOR",
+                    reply_to: user.email,
+                    payment_screenshot: screenshot,
+                    dashboard_link: window.location.origin,
+                    user_name: user.name,
+                    user_email: user.email,
+                    user_role: user.role,
+                    plan_name: plan.name,
+                    plan_price: plan.price,
+                    date: new Date().toLocaleString(),
+                    message: `ACTION REQUIRED: Payment Verification for ${user.name}.`,
+                    content: `User ${user.name} has uploaded a payment screenshot for the ${plan.name} plan.`
+                }
+            }),
+        });
     };
 
     const sendUserConfirmationEmail = async () => {
-        if (!emailConfig.serviceId || !emailConfig.templateId || !emailConfig.publicKey) {
-            return;
-        }
-
+        if (!emailConfig.serviceId) return;
         try {
             await fetch('https://api.emailjs.com/api/v1.0/email/send', {
                 method: 'POST',
@@ -146,31 +127,22 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
                         company_name: "Audit Managment app Presented by INIHOR",
                         reply_to: CONTACT_INFO.email,
                         dashboard_link: window.location.origin,
-                        
-                        // No screenshot or verification code -> Triggers Generic Message view
                         message: `Hello ${user.name},\n\nWe have received your payment screenshot for the ${plan.name} plan.\n\nThe admin team has been notified. If your subscription is not approved within 2 hours, it will be automatically activated.\n\nThank you for choosing us!`,
                     }
                 }),
             });
-            console.log('User confirmation email sent successfully.');
-        } catch (e) {
-            console.error('Failed to send user confirmation email', e);
-        }
+        } catch(e) { console.error(e); }
     };
 
     const handleNotifyAdmin = async () => {
-        if (!screenshot) {
-            setError('Please upload a payment screenshot.');
-            return;
-        }
-
+        if (!screenshot) { setError('Please upload a payment screenshot.'); return; }
         setSendingEmail(true);
 
         if (user.role === Role.ADMIN) {
+             // Admin Self-Activation Logic
             const startDate = new Date();
             const expiryDate = new Date();
             expiryDate.setMonth(startDate.getMonth() + plan.duration_months);
-
             const updatedUser = {
                 ...user,
                 subscription: {
@@ -184,15 +156,14 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
                 pendingPaymentSS: null,
             };
             storage.updateUser(updatedUser);
-            alert(`Admin subscription for the ${plan.name} plan has been activated!`);
+            alert(`Subscription activated!`);
             onPaymentNotified();
             setSendingEmail(false);
             return;
         }
-        
+
         try {
             await sendAdminNotificationEmail();
-
             const updatedUser: User = { 
                 ...user, 
                 pendingPaymentSS: screenshot,
@@ -202,136 +173,141 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
             };
             storage.updateUser(updatedUser);
             storage.addAdminNotification(user, screenshot);
-
             await sendUserConfirmationEmail();
-
             setSendingEmail(false);
             setNotified(true);
         } catch (error) {
-            console.error("Payment notification failed:", error);
             setSendingEmail(false);
             setShowConfig(true);
-            setShowInstructions(true); // Auto-show instructions on failure
-            setError('Failed to send email. Please configure EmailJS below.');
+            setShowInstructions(true);
+            setError('Email sending failed. Please configure keys below.');
         }
-    };
-
-    const handleTestAndSaveConfig = async () => {
-        if (!emailConfig.serviceId || !emailConfig.templateId || !emailConfig.publicKey) {
-            setError('Please fill in all email configuration fields.');
-            return;
-        }
-        setError('');
-        handleNotifyAdmin();
     };
 
     if (notified) {
         return (
-             <div className="payment-notified-container">
-                <h3 className="payment-notified-title">Screenshot Uploaded!</h3>
-                <p className="payment-notified-text">The admin has been notified at <strong>{CONTACT_INFO.email}</strong>.</p>
-                <div style={{backgroundColor: '#ecfdf5', padding: '1rem', borderRadius: '0.5rem', margin: '1rem 0', fontSize: '0.875rem', color: '#065f46'}}>
-                    <strong>Note:</strong> If the admin does not manually confirm within <strong>2 hours</strong>, your subscription will be automatically activated.
-                    <br/><br/>
-                    A confirmation email has also been sent to <strong>{user.email}</strong>.
-                </div>
-                <button onClick={onPaymentNotified} className="payment-notified-button">Go to Dashboard</button>
+             <div className="payment-notified-container" style={{maxWidth: '40rem', margin: '4rem auto', textAlign: 'center', background: 'white', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'}}>
+                 <div style={{width: '4rem', height: '4rem', background: '#ecfdf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: '#059669'}}>
+                    <CheckIcon className="w-8 h-8"/>
+                 </div>
+                <h3 style={{fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem'}}>Payment Submitted!</h3>
+                <p style={{color: '#4b5563', marginBottom: '1.5rem'}}>
+                    Your screenshot has been sent to admin. 
+                    <br/>If not approved within <strong>2 hours</strong>, it will auto-activate.
+                </p>
+                <button onClick={onPaymentNotified} className="final-notify-btn" style={{maxWidth: '200px'}}>Go to Dashboard</button>
              </div>
         );
     }
 
     return (
-        <div className="payment-flow">
-            <button onClick={onBack} className={`back-link ${roleClass}`}>&larr; Back to plans</button>
-            <h2 className="payment-flow-title">Complete Your Subscription</h2>
-            <p className="payment-flow-subtitle">You have selected the <strong style={{fontWeight: 600}}>{plan.name}</strong> plan for <strong style={{fontWeight: 600}}>₹{plan.price}</strong>.</p>
+        <div className="subscription-page">
+            <button onClick={onBack} className="back-link mb-6">
+                 <span>&larr;</span> Back to plans
+            </button>
             
-            <div className="payment-step">
-                <h3 className="payment-step-title">Step 1: Make Payment</h3>
-                <p className="payment-step-text">Please pay the subscription amount to the following UPI ID:</p>
-                <p className="upi-id">{CONTACT_INFO.upi}</p>
-                <div className="payment-actions">
-                    <button onClick={() => window.open(`upi://pay?pa=${CONTACT_INFO.upi}&pn=AuditFlow&am=${plan.price}`, '_blank')} className="payment-action-button upi">Open UPI App</button>
-                    <a href={CONTACT_INFO.whatsapp} target="_blank" rel="noopener noreferrer" className="payment-action-button whatsapp" aria-label="Contact on WhatsApp">
-                        <WhatsAppIcon className="icon" />
-                    </a>
+            <div className="checkout-layout">
+                {/* LEFT: Order Summary */}
+                <div className="order-summary-card">
+                    <h3 className="summary-title">Order Summary</h3>
+                    
+                    <div className="summary-row">
+                        <span>Plan Name</span>
+                        <span style={{fontWeight: 600, color: 'var(--gray-900)'}}>{plan.name}</span>
+                    </div>
+                    <div className="summary-row">
+                        <span>Billing Cycle</span>
+                        <span>{plan.duration_months === 1 ? 'Monthly' : plan.duration_months === 6 ? 'Every 6 Months' : 'Yearly'}</span>
+                    </div>
+                    <div className="summary-row">
+                        <span>Features</span>
+                        <span className="summary-highlight">Unlimited Entries</span>
+                    </div>
+                    
+                    <div className="summary-row total">
+                        <span>Total to Pay</span>
+                        <span>₹{plan.price}</span>
+                    </div>
+
+                    <div style={{marginTop: '2rem', fontSize: '0.85rem', color: 'var(--gray-500)', lineHeight: '1.5'}}>
+                        <p><strong>Note:</strong> This is a one-time payment. Subscription features like "Unlimited Entries" remain unlocked forever for this account once activated.</p>
+                    </div>
+                </div>
+
+                {/* RIGHT: Payment Actions */}
+                <div className="payment-method-card">
+                    <div className="payment-step-box">
+                        <div className="step-header">
+                            <div className="step-number">1</div>
+                            <span className="step-title">Pay via UPI</span>
+                        </div>
+                        <div className="upi-box">
+                            <p style={{margin: 0, color: 'var(--gray-500)', fontSize: '0.9rem'}}>Scan QR or use UPI ID</p>
+                            <div className="upi-code">{CONTACT_INFO.upi}</div>
+                            <div className="payment-btn-group">
+                                <button onClick={() => window.open(`upi://pay?pa=${CONTACT_INFO.upi}&pn=AuditFlow&am=${plan.price}`, '_blank')} className="action-btn upi">
+                                    Open UPI App
+                                </button>
+                                <a href={CONTACT_INFO.whatsapp} target="_blank" rel="noopener noreferrer" className="action-btn whatsapp">
+                                    WhatsApp Us
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="payment-step-box">
+                        <div className="step-header">
+                            <div className="step-number">2</div>
+                            <span className="step-title">Upload Screenshot</span>
+                        </div>
+                        
+                        <div className="upload-zone">
+                            <input type="file" accept="image/*" onChange={handleFileChange} />
+                            <div className="upload-content">
+                                <svg className="upload-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                <p className="upload-placeholder">Click to upload payment proof</p>
+                                {fileName && <p className="file-name-preview">{fileName}</p>}
+                            </div>
+                        </div>
+                        
+                        {screenshot && (
+                            <div className="screenshot-preview-container">
+                                <img src={screenshot} alt="Preview" />
+                            </div>
+                        )}
+                        {error && <p className="error-message mt-2">{error}</p>}
+                    </div>
+
+                    <button 
+                        onClick={handleNotifyAdmin} 
+                        disabled={!screenshot || sendingEmail} 
+                        className="final-notify-btn"
+                    >
+                        {sendingEmail ? 'Processing...' : 'Verify Payment & Activate'}
+                    </button>
                 </div>
             </div>
 
-            <div className="payment-step">
-                <h3 className="payment-step-title">Step 2: Upload Payment Screenshot</h3>
-                <p className="payment-step-text">After successful payment, upload a screenshot to verify.</p>
-                <input type="file" accept="image/*" onChange={handleFileChange} className="file-input"/>
-                {screenshot && <img src={screenshot} alt="Payment screenshot preview" className="screenshot-preview" />}
-                {error && <p className="error-message" style={{marginTop: '0.5rem'}}>{error}</p>}
-            </div>
-
-            <div className="notify-admin-button-container">
-                <button 
-                    onClick={handleNotifyAdmin} 
-                    disabled={!screenshot || sendingEmail} 
-                    className="notify-admin-button">
-                    {sendingEmail ? 'Processing...' : (user.role === Role.ADMIN ? 'Activate Subscription' : 'Test & Notify Admin')}
-                </button>
-            </div>
-
-            {/* Email Config Form - Shows only if email fails */}
+            {/* Error / Manual Config Fallback */}
             {showConfig && (
-                <div style={{marginTop: '1.5rem', padding: '1.5rem', border: '1px solid var(--gray-300)', borderRadius: '0.5rem', backgroundColor: 'var(--gray-50)', textAlign: 'left'}}>
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-                         <h4 style={{margin: '0', fontSize: '1rem', fontWeight: 600}}>Configure Email Provider</h4>
-                         <button onClick={() => setShowInstructions(!showInstructions)} style={{fontSize: '0.875rem', color: 'var(--indigo-600)', textDecoration: 'underline'}}>
-                            {showInstructions ? 'Hide Instructions' : 'Show Instructions'}
-                         </button>
-                    </div>
-
+                <div style={{marginTop: '2rem', background: '#fff', padding: '2rem', borderRadius: '1rem', border: '1px solid #fee2e2'}}>
+                    <h3 style={{color: '#b91c1c', marginBottom: '1rem'}}>Email Configuration Required</h3>
+                    <p style={{fontSize: '0.9rem', marginBottom: '1rem'}}>The automated email failed (likely due to missing API keys). Please enter your EmailJS credentials manually to proceed.</p>
+                     
                     {showInstructions && (
-                        <div style={{backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#1e3a8a'}}>
-                            <p style={{marginBottom: '0.5rem', fontWeight: 'bold'}}>One Template to Rule Them All:</p>
-                            <p style={{marginBottom: '0.5rem'}}>Copy the code below into your EmailJS template (Source Code mode). It handles verification codes, payment screenshots, and notifications in one.</p>
-                            <textarea 
-                                readOnly 
-                                style={{width: '100%', height: '100px', fontSize: '0.75rem', fontFamily: 'monospace', padding: '0.5rem', border: '1px solid #93c5fd', borderRadius: '0.25rem', whiteSpace: 'pre'}}
-                                value={UNIVERSAL_EMAIL_TEMPLATE}
-                            />
-                            <p style={{marginTop: '0.5rem', fontSize: '0.75rem'}}><strong>IMPORTANT:</strong> Set "To Email" in settings to <code>{`{{to_email}}`}</code>.</p>
+                        <div style={{background: '#f8fafc', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem', fontFamily: 'monospace'}}>
+                           Copy Universal Template Code:
+                           <textarea readOnly value={UNIVERSAL_EMAIL_TEMPLATE} style={{width: '100%', height: '60px', marginTop: '0.5rem', fontSize: '0.7rem'}}/>
                         </div>
                     )}
 
-                    <div className="form-group" style={{marginBottom: '0.75rem'}}>
-                        <label className="form-label">Service ID</label>
-                        <input 
-                            type="text" 
-                            className="form-input" 
-                            value={emailConfig.serviceId} 
-                            onChange={(e) => setEmailConfig({...emailConfig, serviceId: e.target.value})}
-                            placeholder="service_xxxxx"
-                        />
-                    </div>
-                    <div className="form-group" style={{marginBottom: '0.75rem'}}>
-                        <label className="form-label">Template ID</label>
-                        <input 
-                            type="text" 
-                            className="form-input" 
-                            value={emailConfig.templateId} 
-                            onChange={(e) => setEmailConfig({...emailConfig, templateId: e.target.value})}
-                            placeholder="template_xxxxx"
-                        />
-                    </div>
-                    <div className="form-group" style={{marginBottom: '1rem'}}>
-                        <label className="form-label">Public Key</label>
-                        <input 
-                            type="text" 
-                            className="form-input" 
-                            value={emailConfig.publicKey} 
-                            onChange={(e) => setEmailConfig({...emailConfig, publicKey: e.target.value})}
-                            placeholder="user_xxxxx"
-                        />
-                    </div>
-                    <div style={{display: 'flex', gap: '1rem'}}>
-                        <button onClick={handleTestAndSaveConfig} className={`submit-button ${roleClass}`}>
-                            Test & Notify Again
-                        </button>
+                    <div style={{display: 'grid', gap: '1rem', maxWidth: '30rem'}}>
+                        <input type="text" className="form-input" placeholder="Service ID" value={emailConfig.serviceId} onChange={e => setEmailConfig({...emailConfig, serviceId: e.target.value})} />
+                        <input type="text" className="form-input" placeholder="Template ID" value={emailConfig.templateId} onChange={e => setEmailConfig({...emailConfig, templateId: e.target.value})} />
+                        <input type="text" className="form-input" placeholder="Public Key" value={emailConfig.publicKey} onChange={e => setEmailConfig({...emailConfig, publicKey: e.target.value})} />
+                        <button onClick={handleNotifyAdmin} className="submit-button firm">Retry Activation</button>
                     </div>
                 </div>
             )}
@@ -361,56 +337,62 @@ const ManageSubscription = ({ user, refreshUser, onBack }: ManageSubscriptionPro
 
     return (
         <div className="subscription-page">
-            <div className="subscription-header-new">
-                <button onClick={onBack} className={`back-link ${roleClass}`}>&larr; Back to Dashboard</button>
-                <h1 className="subscription-title-new">Upgrade Your Plan</h1>
-                <p className="subscription-subtitle-new">
-                    Get unlimited entries and scale your audit management effortlessly.
-                    <br/>
-                    <span style={{fontSize: '0.9rem', color: 'var(--firm-color)', fontWeight: 600}}>
-                        Special Offer: Once unlocked, unlimited features remain active forever for this account!
-                    </span>
-                </p>
+            {/* Top Status Bar */}
+            <div className="subscription-status-bar">
+                <div className="status-bar-info">
+                    <h2>Current Subscription Status</h2>
+                    <p>You have used <strong>{user.subscription.entriesUsed}</strong> out of <strong>{user.subscription.allowedEntries === 'infinity' ? 'Unlimited' : user.subscription.allowedEntries}</strong> entries.</p>
+                </div>
+                <div className="current-plan-tag">
+                    {user.subscription.plan ? user.subscription.plan.toUpperCase() + ' PLAN' : 'FREE PLAN'}
+                </div>
             </div>
 
-            <div className="plans-container-new">
+            <div className="subscription-header-modern">
+                <h1>Upgrade Your Experience</h1>
+                <p>Unlock <strong>Unlimited Audit Entries</strong> and scale your firm without limits. Choose the plan that fits your growth.</p>
+            </div>
+
+            <div className="pricing-grid">
                 {SUBSCRIPTION_PLANS.map((plan) => {
                     const isPopular = plan.key === 'six_month';
                     return (
-                        <div key={plan.key} className={`plan-card-new ${isPopular ? 'popular' : ''}`}>
-                            {isPopular && <div className="popular-badge">Most Popular</div>}
-                            <div className="plan-header">
-                                <h3 className="plan-name-new">{plan.name}</h3>
-                                <div className="plan-price-new">
-                                    <span>₹{plan.price}</span>
-                                    <span className="plan-duration">/ {plan.duration_months} mo</span>
-                                </div>
-                                <div className="plan-billing-info">Billed once</div>
-                            </div>
+                        <div key={plan.key} className={`pricing-card ${isPopular ? 'popular' : ''}`}>
+                            {isPopular && <div className="popular-ribbon">Most Popular</div>}
                             
-                            <div className="plan-features">
-                                <h4 className="features-title">What's included:</h4>
+                            <div className="pricing-header">
+                                <h3>{plan.name} Plan</h3>
+                                <div className="pricing-price">
+                                    <span className="currency">₹</span>
+                                    <span className="amount">{plan.price}</span>
+                                </div>
+                                <span className="duration">Valid for {plan.duration_months} months</span>
+                            </div>
+
+                            <hr style={{border: 'none', borderTop: '1px solid var(--gray-100)', margin: '1.5rem 0'}}/>
+
+                            <div className="pricing-features">
                                 <ul className="feature-list">
-                                    <li><CheckIcon className="feature-icon"/> Unlimited Form Entries</li>
-                                    <li><CheckIcon className="feature-icon"/> Priority Support</li>
-                                    <li><CheckIcon className="feature-icon"/> Lifetime Feature Unlock</li>
+                                    <li><CheckIcon className="feature-icon"/> <strong>Unlimited</strong> Audit Entries</li>
+                                    <li><CheckIcon className="feature-icon"/> Premium Support</li>
+                                    <li><CheckIcon className="feature-icon"/> {plan.duration_months === 12 ? 'Yearly' : 'Regular'} Compliance Updates</li>
+                                    <li><CheckIcon className="feature-icon"/> Lifetime Account Unlock</li>
                                 </ul>
                             </div>
 
                             <button 
                                 onClick={() => setSelectedPlan(plan)}
-                                className={`plan-button ${isPopular ? 'popular-button' : roleClass}`}
+                                className={`pricing-btn ${isPopular ? 'highlight' : 'primary'}`}
                             >
-                                Choose {plan.name}
+                                Select {plan.name}
                             </button>
                         </div>
                     );
                 })}
             </div>
-
-            <div className="free-plan-info-new">
-                <h4>Currently on: Free Plan</h4>
-                <p>You have used {user.subscription.entriesUsed} out of {ROLE_CONFIG[user.role].freeEntries} free entries.</p>
+            
+            <div style={{textAlign: 'center', marginTop: '4rem', color: 'var(--gray-500)', fontSize: '0.9rem'}}>
+                <p>Need a custom enterprise plan? <a href={CONTACT_INFO.whatsapp} target="_blank" rel="noreferrer" style={{color: 'var(--firm-color)', fontWeight: 600}}>Contact Sales</a></p>
             </div>
         </div>
     );
