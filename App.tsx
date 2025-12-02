@@ -19,47 +19,121 @@ const FormDetailsPage = React.lazy(() => import('./pages/FormDetailsPage'));
 
 const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, options?: { role?: Role }) => void }) => {
     return (
-        <div className="welcome-page">
-            <div className="welcome-header">
-                <h1 className="welcome-title">Welcome</h1>
-                <p className="welcome-subtitle">Choose your role to get started</p>
-            </div>
-            <div className="role-buttons-container">
-                <RoleButton 
-                    role={Role.FIRM} 
-                    icon={<BriefcaseIcon />}
-                    onClick={() => onNavigate('login', { role: Role.FIRM })}
-                />
-                <RoleButton 
-                    role={Role.STUDENT} 
-                    icon={<GraduationCapIcon />}
-                    onClick={() => onNavigate('login', { role: Role.STUDENT })}
-                />
-                <RoleButton 
-                    role={Role.ADMIN} 
-                    icon={<ShieldCheckIcon />}
-                    onClick={() => onNavigate('login', { role: Role.ADMIN })}
-                />
-            </div>
+        <div className="landing-page">
+            <nav className="landing-nav">
+                <div className="nav-brand">
+                    <div className="nav-logo-icon">
+                        <BriefcaseIcon />
+                    </div>
+                    <span className="nav-logo-text">AuditFlow</span>
+                </div>
+                <button onClick={() => onNavigate('signup')} className="nav-cta-button">
+                    Create Account
+                </button>
+            </nav>
+
+            <main className="landing-main">
+                <div className="hero-content">
+                    <div className="hero-badge">The #1 Platform for CAs</div>
+                    <h1 className="hero-title">
+                        Audit Management <br />
+                        <span className="text-gradient">Reimagined.</span>
+                    </h1>
+                    <p className="hero-subtitle">
+                        Connect CA Firms with dedicated articleship students. Streamline assignments, track progress, and manage secure payments in one professional dashboard.
+                    </p>
+                    
+                    <div className="role-selection-area">
+                        <p className="role-select-label">Select your portal to login:</p>
+                        <div className="landing-role-grid">
+                            <button onClick={() => onNavigate('login', { role: Role.FIRM })} className="landing-role-card firm">
+                                <div className="role-icon-wrapper firm">
+                                    <BriefcaseIcon />
+                                </div>
+                                <div className="role-card-content">
+                                    <h3>CA Firm</h3>
+                                    <p>Post audits & hire students</p>
+                                </div>
+                                <div className="arrow-icon">&rarr;</div>
+                            </button>
+
+                            <button onClick={() => onNavigate('login', { role: Role.STUDENT })} className="landing-role-card student">
+                                <div className="role-icon-wrapper student">
+                                    <GraduationCapIcon />
+                                </div>
+                                <div className="role-card-content">
+                                    <h3>Student</h3>
+                                    <p>Find work & submit reports</p>
+                                </div>
+                                <div className="arrow-icon">&rarr;</div>
+                            </button>
+
+                            <button onClick={() => onNavigate('login', { role: Role.ADMIN })} className="landing-role-card admin">
+                                <div className="role-icon-wrapper admin">
+                                    <ShieldCheckIcon />
+                                </div>
+                                <div className="role-card-content">
+                                    <h3>Admin</h3>
+                                    <p>System controls</p>
+                                </div>
+                                <div className="arrow-icon">&rarr;</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="hero-visual">
+                    <div className="visual-background-shape one"></div>
+                    <div className="visual-background-shape two"></div>
+                    
+                    <div className="app-preview-card">
+                        <div className="preview-header">
+                            <div className="preview-dot red"></div>
+                            <div className="preview-dot yellow"></div>
+                            <div className="preview-dot green"></div>
+                        </div>
+                        <div className="preview-body">
+                            <div className="preview-sidebar">
+                                <div className="preview-line w-full"></div>
+                                <div className="preview-line w-70"></div>
+                                <div className="preview-line w-80"></div>
+                            </div>
+                            <div className="preview-main">
+                                <div className="preview-hero-box"></div>
+                                <div className="preview-row">
+                                    <div className="preview-card-sm"></div>
+                                    <div className="preview-card-sm"></div>
+                                </div>
+                                <div className="preview-list">
+                                    <div className="preview-list-item"></div>
+                                    <div className="preview-list-item"></div>
+                                    <div className="preview-list-item"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Floating Badge */}
+                        <div className="floating-badge">
+                            <div className="badge-icon"><ShieldCheckIcon /></div>
+                            <div>
+                                <div className="badge-title">Verified</div>
+                                <div className="badge-sub">Secure Platform</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            
+            <footer className="landing-footer">
+                <p>&copy; {new Date().getFullYear()} Audit Flow Manager. All rights reserved.</p>
+                <div className="footer-links">
+                    <span>Privacy Policy</span>
+                    <span>Terms of Service</span>
+                    <span>Contact Support</span>
+                </div>
+            </footer>
         </div>
     );
 };
-
-const RoleButton = ({ role, icon, onClick }: { role: Role, icon: React.ReactNode, onClick: () => void }) => {
-    const config = ROLE_CONFIG[role];
-    const roleClass = role.toLowerCase();
-    
-    return (
-        <button
-            onClick={onClick}
-            className={`role-button ${roleClass}`}
-        >
-            {React.cloneElement(icon as React.ReactElement<any>, { className: "role-icon" })}
-            Login as {config.name}
-        </button>
-    );
-};
-
 
 export default function App() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
