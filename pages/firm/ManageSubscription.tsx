@@ -80,7 +80,7 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
     };
 
     const sendAdminNotificationEmail = async () => {
-        if (!emailConfig.serviceId || !emailConfig.templateId || !emailConfig.publicKey || emailConfig.publicKey.includes('xxxx')) {
+        if (!emailConfig.serviceId || !emailConfig.templateId || !emailConfig.publicKey) {
             console.warn('EmailJS not configured, skipping admin email.');
             throw new Error('Configuration Missing');
         }
@@ -126,7 +126,7 @@ const PaymentFlow = ({ plan, user, onPaymentNotified, onBack }: PaymentFlowProps
     };
 
     const sendUserConfirmationEmail = async () => {
-        if (!emailConfig.serviceId || !emailConfig.templateId || !emailConfig.publicKey || emailConfig.publicKey.includes('xxxx')) {
+        if (!emailConfig.serviceId || !emailConfig.templateId || !emailConfig.publicKey) {
             return;
         }
 
