@@ -1,9 +1,10 @@
 
-const CACHE_NAME = 'audit-flow-v19-network-first';
+const CACHE_NAME = 'audit-flow-v20-static-styles';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/style.css'
 ];
 
 self.addEventListener('install', (event) => {
@@ -32,9 +33,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache First for other assets (images, fonts)
-  // Note: We generally don't cache built JS/CSS here explicitly to avoid version mismatches, 
-  // relying on browser cache for those or runtime caching if needed.
+  // Cache First for other assets (images, fonts, styles)
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);
