@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'audit-flow-v20-static-styles';
+const CACHE_NAME = 'audit-flow-v21-seo-update';
 const urlsToCache = [
   '/',
   '/index.html',
