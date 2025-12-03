@@ -1,9 +1,8 @@
 
-const CACHE_NAME = 'audit-flow-v11-google-fix';
+const CACHE_NAME = 'audit-flow-v12-style-fix';
 const urlsToCache = [
   '/',
-  '/index.html',
-  '/style.css'
+  '/index.html'
 ];
 
 // Install SW
