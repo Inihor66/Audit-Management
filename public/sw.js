@@ -1,36 +1,47 @@
 
-const CACHE_NAME = 'audit-flow-v16-deployment-fix';
+const CACHE_NAME = 'audit-flow-v17-network-first';
 const urlsToCache = [
   '/',
-  '/index.html'
+  '/index.html',
+  '/manifest.json'
 ];
 
-// Install SW
 self.addEventListener('install', (event) => {
   self.skipWaiting(); // Force activate new SW immediately
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
   );
 });
 
-// Listen for requests
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
+  // Network First for HTML navigation (to ensure we get latest asset hashes from Vercel)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Update cache with new HTML
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
           return response;
-        }
-        return fetch(event.request);
-      })
+        })
+        .catch(() => {
+          // Fallback to cache if offline
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Cache First for other assets (images, fonts)
+  // Note: We generally don't cache built JS/CSS here explicitly to avoid version mismatches, 
+  // relying on browser cache for those or runtime caching if needed.
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
   );
 });
 
-// Activate the SW
 self.addEventListener('activate', (event) => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
