@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
    <!-- Main Landing Page -->
    <url>
-      <loc>https://auditflowmanager.com/</loc>
+      <loc>https://audit-management-one.vercel.app/</loc>
       <lastmod>2024-05-20</lastmod>
       <changefreq>daily</changefreq>
       <priority>1.0</priority>
@@ -10,26 +10,15 @@
    
    <!-- Sign Up Page -->
    <url>
-      <loc>https://auditflowmanager.com/?page=signup</loc>
+      <loc>https://audit-management-one.vercel.app/?page=signup</loc>
       <changefreq>monthly</changefreq>
       <priority>0.8</priority>
    </url>
    
    <!-- Login Page -->
    <url>
-      <loc>https://auditflowmanager.com/?page=login</loc>
+      <loc>https://audit-management-one.vercel.app/?page=login</loc>
       <changefreq>monthly</changefreq>
       <priority>0.8</priority>
    </url>
-
-   <!-- 
-      MANUAL ADDITION SECTION:
-      To add more pages manually, copy the block below and remove the comment arrows.
-      
-      <url>
-         <loc>https://auditflowmanager.com/your-new-page</loc>
-         <changefreq>monthly</changefreq>
-         <priority>0.7</priority>
-      </url>
-   -->
 </urlset>
