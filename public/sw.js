@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'audit-flow-v17-network-first';
+const CACHE_NAME = 'audit-flow-v18-network-first';
 const urlsToCache = [
   '/',
   '/index.html',
