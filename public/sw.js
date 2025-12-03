@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'audit-flow-v15-deployment-fix';
+const CACHE_NAME = 'audit-flow-v16-deployment-fix';
 const urlsToCache = [
   '/',
   '/index.html'
