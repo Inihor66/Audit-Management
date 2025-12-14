@@ -78,7 +78,7 @@ const WelcomePage = ({ onNavigate }: { onNavigate: (page: string, options?: { ro
                             </div>
                             <div className="card-content">
                                 <h3>Student</h3>
-                                <p>Find audits</p>
+                                <p>Find articleship & audits</p>
                             </div>
                             <div className="card-arrow">&rarr;</div>
                         </button>
@@ -127,7 +127,47 @@ export default function App() {
 
         const urlParams = new URLSearchParams(window.location.search);
         const pageFromUrl = urlParams.get('page');
+        const formIdFromUrl = urlParams.get('formId');
+        const roleFromUrl = urlParams.get('role');
 
+        const loggedInUserId = sessionStorage.getItem('loggedInUserId');
+        let user: User | undefined;
+
+        if (loggedInUserId) {
+            user = storage.getUserById(loggedInUserId);
+            if (user) {
+                setCurrentUser(user);
+            }
+        }
+
+        // DEEP LINK LOGIC: Handle direct links to specific forms (e.g., Shareable links)
+        if (pageFromUrl === 'form_details' && formIdFromUrl) {
+            // Remove params from URL to clean it up, but keep internal state
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            if (user) {
+                // User is already logged in, go directly to form
+                setPage('form_details');
+                setSelectedFormId(formIdFromUrl);
+            } else {
+                // User NOT logged in. Store intended destination and redirect to login.
+                sessionStorage.setItem('pendingFormId', formIdFromUrl);
+                
+                // If the link explicitly specifies a role (e.g. STUDENT), default to that login page
+                if (roleFromUrl === Role.STUDENT) {
+                    setSelectedRole(Role.STUDENT);
+                } else {
+                    // Default to Student login for shareable links if not specified, 
+                    // as these are usually shared with students.
+                    setSelectedRole(Role.STUDENT);
+                }
+                setPage('login');
+            }
+            setLoading(false);
+            return;
+        }
+
+        // Handle Signup Page Direct Link
         if (pageFromUrl === 'signup') {
             window.history.replaceState({}, document.title, window.location.pathname);
             setPage('signup');
@@ -135,25 +175,32 @@ export default function App() {
             return;
         }
 
-        const loggedInUserId = sessionStorage.getItem('loggedInUserId');
-        if (loggedInUserId) {
-            const user = storage.getUserById(loggedInUserId);
-            if (user) {
-                setCurrentUser(user);
-                setPage('dashboard');
-            }
+        // Normal Session Restoration
+        if (user) {
+            setPage('dashboard');
         }
+
         setLoading(false);
     }, []);
 
     const handleLogin = useCallback((user: User) => {
         sessionStorage.setItem('loggedInUserId', user.id);
         setCurrentUser(user);
-        setPage('dashboard');
+
+        // Check for pending Deep Link (Shareable Link redirection)
+        const pendingFormId = sessionStorage.getItem('pendingFormId');
+        if (pendingFormId) {
+            sessionStorage.removeItem('pendingFormId'); // Clear it
+            setSelectedFormId(pendingFormId);
+            setPage('form_details');
+        } else {
+            setPage('dashboard');
+        }
     }, []);
     
     const handleLogout = useCallback(() => {
         sessionStorage.removeItem('loggedInUserId');
+        sessionStorage.removeItem('pendingFormId');
         setCurrentUser(null);
         setPage('welcome');
         setSelectedFormId(null);
@@ -162,7 +209,7 @@ export default function App() {
 
     const handleNavigate = useCallback((newPage: string, options?: { role?: Role; formId?: string; userId?: string }) => {
         setPage(newPage);
-        setSelectedRole(options?.role);
+        if (options?.role) setSelectedRole(options.role);
         setSelectedFormId(options?.formId || null);
         setSelectedUserId(options?.userId || null);
     }, []);
@@ -226,3 +273,4 @@ export default function App() {
         </React.Suspense>
     );
 }
+
