@@ -67,6 +67,7 @@ export interface FormData {
   paymentReminder: boolean;
   reminderNotified: boolean; // Tracks if a payment reminder has been issued
   isApproved: boolean;
+  approvedByAdminId?: string; // ID of the admin who approved/claimed this form
   finalFees: number | null;
   studentSubmission: StudentSubmission | null;
   createdAt: string;
@@ -90,3 +91,4 @@ export interface SubscriptionPlan {
   price: number;
   duration_months: number;
 }
+
