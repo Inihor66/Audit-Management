@@ -8,8 +8,6 @@ import { Modal } from '../../components/Modal';
 import { ShareIcon } from '../../components/icons/ShareIcon';
 import ManageSubscription from '../firm/ManageSubscription';
 
-// Fixed imports to ../../
-
 interface AdminDashboardProps {
   user: User;
   onLogout: () => void;
@@ -43,7 +41,11 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
         const adminCodeLower = adminCode.trim().toLowerCase();
         setAllForms(
             storage.getForms()
-                .filter(f => f.adminCode?.trim().toLowerCase() === adminCodeLower)
+                .filter(f => {
+                    // Support multiple admin codes separated by comma
+                    const formCodes = (f.adminCode || '').split(',').map(c => c.trim().toLowerCase());
+                    return formCodes.includes(adminCodeLower);
+                })
                 .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         );
     }, [adminCode]);
