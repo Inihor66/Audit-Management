@@ -98,8 +98,20 @@ const AuditForm = ({ user, onSuccess, onCancel, initialData }: AuditFormProps) =
             <input type="date" name="expectedDate" id="expectedDate" value={formData.expectedDate} onChange={handleInputChange} required className="form-input" />
           </div>
           <div className="form-group">
-            <label htmlFor="adminCode" className="form-label">Admin Code</label>
-            <input type="text" name="adminCode" id="adminCode" value={formData.adminCode} onChange={handleInputChange} required className="form-input" />
+            <label htmlFor="adminCode" className="form-label">Admin Code(s)</label>
+            <input 
+                type="text" 
+                name="adminCode" 
+                id="adminCode" 
+                value={formData.adminCode} 
+                onChange={handleInputChange} 
+                required 
+                className="form-input" 
+                placeholder="e.g. CA123, TAX456 (separate with comma)"
+            />
+             <p style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+                To assign multiple admins, separate codes with a comma (e.g., A, B).
+            </p>
           </div>
           <div className="form-group">
             <label htmlFor="feesRange" className="form-label">Fees Range</label>
