@@ -1,4 +1,5 @@
 
+
 /*
  * Audit Flow Manager Stylesheet
  */
@@ -549,6 +550,43 @@ input, select, textarea {
 .dashboard-welcome-title { font-size: 2rem; font-weight: 700; margin: 0 0 0.5rem 0; }
 .dashboard-welcome-text { margin: 0; opacity: 0.9; font-size: 1.1rem; }
 
+/* Expiry Banner */
+.expiry-banner {
+    background-color: #fef2f2;
+    border: 1px solid #fee2e2;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    color: #991b1b;
+    margin-top: -3rem; /* Align with stats */
+    position: relative;
+    z-index: 20;
+    box-shadow: var(--shadow-md);
+}
+
+.expiry-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.expiry-action-btn {
+    background: #b91c1c;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+.expiry-action-btn:hover {
+    background: #991b1b;
+}
+
 .firm-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -558,6 +596,11 @@ input, select, textarea {
   margin-top: -3rem; /* Overlap banner */
   z-index: 10;
   padding: 0 1rem;
+}
+
+/* Adjust stats grid if banner is present */
+.firm-stats-grid.mt-4 {
+    margin-top: 1rem;
 }
 
 .stat-card {
@@ -573,6 +616,11 @@ input, select, textarea {
 .stat-card.highlight {
   border: 2px solid var(--firm-light);
   background: #fdfcff;
+}
+
+.stat-card.highlight.locked {
+    border-color: #fee2e2;
+    background: #fff5f5;
 }
 
 .stat-label { font-size: 0.875rem; color: var(--gray-500); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -622,7 +670,7 @@ input, select, textarea {
   box-shadow: var(--shadow-sm);
 }
 .create-new-form-button:hover:not(:disabled) { background-color: var(--firm-hover-color); }
-.create-new-form-button:disabled { background-color: var(--gray-400); cursor: not-allowed; }
+.create-new-form-button:disabled { background-color: var(--gray-300); cursor: not-allowed; color: var(--gray-500); box-shadow: none; }
 
 .table-search-input {
   padding: 0.5rem 1rem;
