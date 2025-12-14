@@ -150,31 +150,32 @@ export const processSubscriptionRules = (): void => {
             }
         }
 
-        // 2. Expiration Logic
+        // 2. Expiration Logic (Auto-Lock)
         if (user.subscription.status === 'active' && user.subscription.expiryDate) {
             const expiryTime = new Date(user.subscription.expiryDate);
             if (now > expiryTime) {
-                // Per user request: "after the expriy the subcription additional feature should be locked"
+                // LOCK FEATURES AUTOMATICALLY
+                console.log(`[System] Expiring subscription for user: ${user.email}`);
                 
                 user.subscription = {
                     status: 'inactive', // Mark as inactive (expired)
-                    plan: 'free', 
+                    plan: 'free', // Revert plan name
                     startDate: null,
-                    expiryDate: null,
-                    entriesUsed: user.subscription.entriesUsed,
-                    allowedEntries: ROLE_CONFIG[user.role].freeEntries, // Revert to free limits (Locked)
+                    expiryDate: null, // Clear expiry
+                    entriesUsed: user.subscription.entriesUsed, // Retain usage history
+                    allowedEntries: ROLE_CONFIG[user.role].freeEntries, // Revert to restrictive limit
                 };
                 
+                // Add notification informing user of the lock
                 user.notifications.push({
                     id: generateId(),
-                    message: `Your subscription has expired. Premium features are now locked and entry limits apply. Please renew to continue enjoying unlimited access.`,
+                    message: `Your subscription has expired. Premium features are now locked and entry limits have been reverted to the free tier.`,
                     type: 'warning',
                     read: false,
                     createdAt: now.toISOString(),
                 });
 
                 changed = true;
-                console.log(`[System] Expired subscription and locked features for user: ${user.email}`);
             }
         }
     });
@@ -241,3 +242,4 @@ export const updateAdminNotification = (updatedNotification: AdminNotification):
         saveAdminNotifications(notifications);
     }
 };
+
