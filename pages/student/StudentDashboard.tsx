@@ -5,6 +5,8 @@ import * as storage from '../../services/storageService';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Modal } from '../../components/Modal';
 
+// Fixed imports to ../../
+
 interface StudentDashboardProps {
   user: User;
   onLogout: () => void;
