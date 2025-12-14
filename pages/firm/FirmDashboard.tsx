@@ -377,4 +377,3 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
 };
 
 export default FirmDashboard;
-
