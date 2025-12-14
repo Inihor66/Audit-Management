@@ -59,7 +59,13 @@ export default function FormDetailsPage({ formId, user, onBack, refreshUser, onL
     const handleAdminApprove = () => {
         if (!form) return;
 
-        const updatedForm = { ...form, ...editableForm, isApproved: true } as FormData;
+        const updatedForm: FormData = { 
+            ...form, 
+            ...editableForm, 
+            isApproved: true,
+            // Track which admin approved this form
+            approvedByAdminId: user.id 
+        };
         
         // Count entry on approval if not already counted
         if (!updatedForm.entryCounted) {
@@ -77,7 +83,7 @@ export default function FormDetailsPage({ formId, user, onBack, refreshUser, onL
         
         storage.updateForm(updatedForm);
         setForm(updatedForm);
-        alert('Form approved and saved!');
+        alert('Form approved and saved! It is now linked exclusively to your dashboard.');
         onBack();
     };
 
@@ -247,7 +253,7 @@ export default function FormDetailsPage({ formId, user, onBack, refreshUser, onL
 
                 <div className="form-actions" style={{paddingTop: '1rem'}}>
                     {!isFormLocked && <button onClick={handleAdminUpdate} className="modal-button save">Save Changes</button>}
-                    {!form!.isApproved && !isFormLocked && <button onClick={handleAdminApprove} className="modal-button approve">Approve & Save</button>}
+                    {!form!.isApproved && !isFormLocked && <button onClick={handleAdminApprove} className="modal-button approve">Approve & Claim</button>}
                 </div>
             </div>
         );
