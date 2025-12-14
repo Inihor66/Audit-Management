@@ -9,6 +9,8 @@ import { Modal } from '../../components/Modal';
 import AuditForm from './AuditForm';
 import ManageSubscription from './ManageSubscription';
 
+// Fixed import paths to ../../
+
 interface FirmDashboardProps {
   user: User;
   onLogout: () => void;
