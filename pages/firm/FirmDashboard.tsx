@@ -25,11 +25,11 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
   const [searchTerm, setSearchTerm] = useState('');
   
   // Stats calculations
-  const entriesLeft = user.subscription.allowedEntries === 'infinity' ? 'Unlimited' : user.subscription.allowedEntries - user.subscription.entriesUsed;
-  const canCreateForm = user.subscription.allowedEntries === 'infinity' || user.subscription.entriesUsed < user.subscription.allowedEntries;
+  const entriesLeft = user.subscription.allowedEntries === 'infinity' ? 'Unlimited' : Math.max(0, user.subscription.allowedEntries - user.subscription.entriesUsed);
+  const canCreateForm = user.subscription.allowedEntries === 'infinity' || user.subscription.entriesUsed < (user.subscription.allowedEntries as number);
   
-  // Check if subscription is expired but unlimited features are still active
-  const isUnlimitedButExpired = user.subscription.status === 'inactive' && user.subscription.allowedEntries === 'infinity';
+  // Expiry Check
+  const isSubscriptionExpired = user.subscription.status === 'inactive' && typeof user.subscription.allowedEntries === 'number' && user.subscription.entriesUsed >= user.subscription.allowedEntries;
 
   const totalForms = forms.length;
   const activeForms = forms.filter(f => f.isApproved && !f.studentSubmission).length;
@@ -58,7 +58,7 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
         setFormToEdit(form);
     } else {
         if (!canCreateForm) {
-            alert('Entry limit reached. Please purchase a subscription.');
+            alert('Your subscription entry limit has been reached or your plan has expired. Please upgrade to continue.');
             return;
         }
         setFormToEdit(null);
@@ -174,15 +174,15 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
                 <div className="profile-section-card">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="section-title mb-0">Subscription & Usage</h3>
-                        <span className={`status-badge ${user.subscription.status === 'active' || isUnlimitedButExpired ? 'green' : 'yellow'}`}>
-                            {user.subscription.status === 'active' ? 'ACTIVE' : (isUnlimitedButExpired ? 'UNLOCKED' : 'INACTIVE')}
+                        <span className={`status-badge ${user.subscription.status === 'active' ? 'green' : 'yellow'}`}>
+                            {user.subscription.status === 'active' ? 'ACTIVE' : 'EXPIRED'}
                         </span>
                     </div>
 
                     <div className="usage-container">
                         <div className="usage-header">
                             <span className="plan-name">
-                                {isUnlimitedButExpired ? 'Legacy (Unlocked)' : (user.subscription.plan ? user.subscription.plan.replace('_', ' ') + ' Plan' : 'Free Plan')}
+                                {user.subscription.plan && user.subscription.plan !== 'free' ? user.subscription.plan.replace('_', ' ') + ' Plan' : 'Free Plan'}
                             </span>
                             <span className="usage-text">
                                 {used} / {isInfinity ? '∞' : total} Entries Used
@@ -197,13 +197,13 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
                         <p className="expiry-text">
                             {user.subscription.expiryDate 
                                 ? `Valid until ${new Date(user.subscription.expiryDate).toLocaleDateString()}` 
-                                : 'No expiration date'}
+                                : (user.subscription.plan === 'free' ? 'Standard Free Tier' : 'Expired')}
                         </p>
                     </div>
 
                     <div className="mt-4 flex justify-end">
                         <button onClick={() => setView('manage_subscription')} className="upgrade-btn-small">
-                            {user.subscription.plan === 'yearly' ? 'Manage Plan' : 'Upgrade Plan'}
+                            {user.subscription.status === 'active' && user.subscription.plan !== 'free' ? 'Extend Plan' : 'Upgrade Plan'}
                         </button>
                     </div>
                 </div>
@@ -224,8 +224,20 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
             </div>
         </div>
         
+        {/* Expiry Warning Banner */}
+        {!canCreateForm && (
+            <div className="expiry-banner">
+                <div className="expiry-content">
+                    <strong>Subscription Expired or Limit Reached.</strong> Your "Create Form" feature is locked. Please renew to continue posting audits.
+                </div>
+                <button onClick={() => setView('manage_subscription')} className="expiry-action-btn">
+                    Unlock Now
+                </button>
+            </div>
+        )}
+        
         {/* Stats Grid - Overlapping the banner */}
-        <div className="firm-stats-grid">
+        <div className={`firm-stats-grid ${!canCreateForm ? 'mt-4' : ''}`}>
             <div className="stat-card">
                 <div className="stat-label">Total Forms</div>
                 <div className="stat-value">{totalForms}</div>
@@ -253,11 +265,11 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
                     </svg>
                 </div>
             </div>
-            <div className="stat-card highlight">
+            <div className={`stat-card highlight ${!canCreateForm ? 'locked' : ''}`}>
                 <div className="stat-label text-firm-600">Entries Left</div>
                 <div className="stat-value text-firm-600">{entriesLeft}</div>
                 <button onClick={() => setView('manage_subscription')} className="text-xs font-semibold text-firm-600 hover:underline mt-2 text-left">
-                    Upgrade Plan &rarr;
+                    {canCreateForm ? 'Upgrade Plan →' : 'Unlock Now →'}
                 </button>
             </div>
         </div>
@@ -279,10 +291,13 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
                         onClick={() => openFormEditor()} 
                         disabled={!canCreateForm} 
                         className="create-new-form-button" 
-                        title={!canCreateForm ? 'Entry limit reached' : 'Create new audit form'}
+                        title={!canCreateForm ? 'Feature Locked: Subscription Expired' : 'Create new audit form'}
                     >
-                        <PlusIcon className="w-4 h-4" /> 
-                        Create Form
+                        {canCreateForm ? <PlusIcon className="w-4 h-4" /> : 
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>}
+                        {canCreateForm ? 'Create Form' : 'Locked'}
                     </button>
                 </div>
             </div>
@@ -362,3 +377,4 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
 };
 
 export default FirmDashboard;
+
