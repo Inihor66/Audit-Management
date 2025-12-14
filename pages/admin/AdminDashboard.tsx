@@ -42,13 +42,31 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
         setAllForms(
             storage.getForms()
                 .filter(f => {
-                    // Support multiple admin codes separated by comma
+                    // 1. Check if this form belongs to this admin group (via comma separated codes)
                     const formCodes = (f.adminCode || '').split(',').map(c => c.trim().toLowerCase());
-                    return formCodes.includes(adminCodeLower);
+                    const hasAccess = formCodes.includes(adminCodeLower);
+                    
+                    if (!hasAccess) return false;
+
+                    // 2. Logic for Multi-Admin visibility:
+                    // - If Pending (!isApproved): Show to ALL admins with the code (so anyone can grab it).
+                    // - If Approved (isApproved): Show ONLY if 'approvedByAdminId' matches current user.
+                    //   (If it was approved by someone else, it disappears from this user's dashboard).
+                    if (!f.isApproved) {
+                        return true;
+                    } else {
+                        // For backward compatibility, if approvedByAdminId is missing, maybe show it?
+                        // But user requested "hat jaye" (remove it). So we strictly check ID.
+                        // If approvedByAdminId exists, it must match.
+                        // If it doesn't exist (old data), we treat it as claimed by 'unknown', so we hide it 
+                        // to prevent conflicts, OR we could show it. 
+                        // Strict implementation of request:
+                        return f.approvedByAdminId === user.id;
+                    }
                 })
                 .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         );
-    }, [adminCode]);
+    }, [adminCode, user.id]);
 
     useEffect(() => {
         fetchData();
