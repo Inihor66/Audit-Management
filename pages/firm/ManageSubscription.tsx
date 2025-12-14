@@ -397,3 +397,4 @@ const ManageSubscription = ({ user, refreshUser, onBack }: ManageSubscriptionPro
 };
 
 export default ManageSubscription;
+
