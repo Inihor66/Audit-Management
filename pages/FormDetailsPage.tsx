@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User, FormData, Role } from '../types';
 import * as storage from '../services/storageService';
 import { DashboardLayout } from '../components/DashboardLayout';
+import { ShareIcon } from '../components/icons/ShareIcon';
 
 interface FormDetailsPageProps {
   formId: string;
@@ -101,6 +102,15 @@ export default function FormDetailsPage({ formId, user, onBack, refreshUser, onL
         alert('Application submitted successfully!');
         onBack();
     };
+    
+    // Share Link Generator for Admin
+    const copyShareLink = () => {
+        if(!form) return;
+        const link = `${window.location.origin}/?page=form_details&formId=${form.id}&role=STUDENT`;
+        navigator.clipboard.writeText(link).then(() => {
+            alert("Shareable link copied to clipboard!");
+        });
+    };
 
 
     const renderFirmView = () => (
@@ -189,6 +199,18 @@ export default function FormDetailsPage({ formId, user, onBack, refreshUser, onL
         const isFormLocked = !!form!.studentSubmission;
         return (
             <div className="auth-form" style={{gap: '1rem'}}>
+                {form!.isApproved && !isFormLocked && (
+                    <div className="form-group-full" style={{marginBottom: '1rem', background: '#ecfdf5', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #10b981'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                            <span style={{color: '#065f46', fontWeight: 600}}>Shareable Student Link:</span>
+                            <button onClick={copyShareLink} style={{background: 'white', border: '1px solid #10b981', color: '#059669', padding: '0.5rem 1rem', borderRadius: '0.375rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                                <ShareIcon className="w-4 h-4"/> Copy Link
+                            </button>
+                        </div>
+                        <p style={{fontSize: '0.8rem', color: '#047857', marginTop: '0.5rem'}}>Send this link to students to let them apply directly.</p>
+                    </div>
+                )}
+                
                 <div className="form-group-full"> <h4 className="form-section-title">Firm Details (Read-Only)</h4></div>
                 <div className="form-grid">
                     <div className="form-group"><label className="form-label">Firm Name</label><input type="text" value={form!.firmName} className="form-input" disabled /></div>
@@ -258,3 +280,4 @@ export default function FormDetailsPage({ formId, user, onBack, refreshUser, onL
         </DashboardLayout>
     );
 }
+
