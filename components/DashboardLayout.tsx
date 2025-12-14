@@ -41,8 +41,13 @@ export const DashboardLayout = ({ user, onLogout, children, onNavigateToProfile 
           .filter(f => f.createdByUserId === user.id && f.paymentReminder && !f.reminderNotified && new Date(f.expectedDate) <= today)
           .map(f => ({ formId: f.id, message: `Payment due for audit at ${f.location}.` }));
       } else if (user.role === Role.ADMIN && user.adminCode) {
+         const adminCodeLower = user.adminCode.trim().toLowerCase();
          userReminders = allForms
-          .filter(f => f.adminCode?.trim().toLowerCase() === user.adminCode?.trim().toLowerCase() && f.paymentReminder && !f.reminderNotified && new Date(f.expectedDate) <= today)
+          .filter(f => {
+              // Support multiple admin codes (comma separated)
+              const formCodes = (f.adminCode || '').split(',').map(c => c.trim().toLowerCase());
+              return formCodes.includes(adminCodeLower) && f.paymentReminder && !f.reminderNotified && new Date(f.expectedDate) <= today;
+          })
           .map(f => ({ formId: f.id, message: `Payment reminder for ${f.firmName} at ${f.location}.` }));
       }
 
@@ -164,3 +169,4 @@ export const DashboardLayout = ({ user, onLogout, children, onNavigateToProfile 
         </div>
     );
 };
+
