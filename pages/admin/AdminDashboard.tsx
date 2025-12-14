@@ -1,9 +1,11 @@
+
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { User, FormData, AdminNotification, Role } from '../../types';
 import * as storage from '../../services/storageService';
 import { SUBSCRIPTION_PLANS } from '../../constants';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Modal } from '../../components/Modal';
+import { ShareIcon } from '../../components/icons/ShareIcon';
 import ManageSubscription from '../firm/ManageSubscription';
 
 interface AdminDashboardProps {
@@ -22,6 +24,9 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
     
     // State for payment processing
     const [processingPayment, setProcessingPayment] = useState(false);
+    
+    // Check for Lock Status
+    const canCreateForm = user.subscription.allowedEntries === 'infinity' || user.subscription.entriesUsed < user.subscription.allowedEntries;
     
     const { adminCode } = user;
     
@@ -130,8 +135,16 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
         fetchData();
         refreshUser();
     };
+    
+    // --- SHARE LINK LOGIC ---
+    const copyShareLink = (formId: string) => {
+        const link = `${window.location.origin}/?page=form_details&formId=${formId}&role=STUDENT`;
+        navigator.clipboard.writeText(link).then(() => {
+            alert("Shareable link copied to clipboard!");
+        });
+    };
 
-    const renderTable = (data: FormData[], title: string, emptyMsg: string) => (
+    const renderTable = (data: FormData[], title: string, emptyMsg: string, showShare: boolean = false) => (
          <div className="card">
             <h3 className="table-title">{title}</h3>
             <div className="table-container">
@@ -157,6 +170,16 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                                     </span>
                                 </td>
                                 <td style={{textAlign: 'right'}}>
+                                    {showShare && form.isApproved && !form.studentSubmission && (
+                                        <button 
+                                            onClick={() => copyShareLink(form.id)} 
+                                            className="table-action-link view" 
+                                            title="Copy Shareable Link for Students"
+                                            style={{marginRight: '10px'}}
+                                        >
+                                            <ShareIcon className="w-4 h-4 inline-block" /> Share
+                                        </button>
+                                    )}
                                     <button onClick={() => onNavigate('form_details', { formId: form.id })} className="table-action-link view">View/Edit</button>
                                 </td>
                             </tr>
@@ -177,6 +200,17 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                     <p className="dashboard-welcome-text">Code: <strong>{adminCode}</strong> | Manage firms, payments, and audits.</p>
                 </div>
              </div>
+             
+            {!canCreateForm && (
+                <div className="expiry-banner" style={{borderColor: '#fcd34d', backgroundColor: '#fffbeb', color: '#92400e'}}>
+                    <div className="expiry-content">
+                        <strong>Action Required:</strong> Your admin subscription limit is reached. Some features might be restricted.
+                    </div>
+                    <button onClick={() => setView('manage_subscription')} className="expiry-action-btn" style={{backgroundColor: '#b45309'}}>
+                        Renew
+                    </button>
+                </div>
+            )}
 
              <div className="firm-stats-grid">
                 <div className="stat-card" onClick={() => setView('pending_payments')} style={{cursor: 'pointer'}}>
@@ -234,12 +268,12 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                             </div>
                         </div>
                     )}
-                    {renderTable(allForms.slice(0, 5), 'Recent Activity', 'No forms found.')}
+                    {renderTable(allForms.slice(0, 5), 'Recent Activity', 'No forms found.', true)}
                 </div>
             )}
             
             {view === 'pre_edit' && renderTable(pendingForms, 'Pending Forms (Pre-Edit)', 'No pending forms.')}
-            {view === 'post_edit' && renderTable(approvedForms, 'Approved Forms (Post-Edit)', 'No approved forms.')}
+            {view === 'post_edit' && renderTable(approvedForms, 'Approved Forms (Post-Edit)', 'No approved forms.', true)}
             {view === 'filled' && renderTable(filledForms, 'Filled Forms', 'No filled forms.')}
             {view === 'pending_payments' && (
                  <div className="card">
@@ -315,7 +349,7 @@ const AdminDashboard = ({ user, onLogout, refreshUser, onNavigate }: AdminDashbo
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="section-title mb-0">My Subscription</h3>
                                 <span className={`status-badge ${user.subscription.status === 'active' ? 'green' : 'yellow'}`}>
-                                    {user.subscription.status === 'active' ? 'ACTIVE' : 'INACTIVE'}
+                                    {user.subscription.status === 'active' ? 'ACTIVE' : 'EXPIRED'}
                                 </span>
                             </div>
                              <div className="usage-container">
