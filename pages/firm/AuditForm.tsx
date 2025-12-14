@@ -3,8 +3,6 @@ import React, { useState } from 'react';
 import { FormData, User } from '../../types';
 import * as storage from '../../services/storageService';
 
-// Fixed imports to ../../
-
 interface AuditFormProps {
   user: User;
   onSuccess: () => void;
