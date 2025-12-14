@@ -155,3 +155,4 @@ const StudentDashboard = ({ user, onLogout, onNavigate }: StudentDashboardProps)
 };
 
 export default StudentDashboard;
+
