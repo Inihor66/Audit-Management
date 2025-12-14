@@ -9,8 +9,6 @@ import { Modal } from '../../components/Modal';
 import AuditForm from './AuditForm';
 import ManageSubscription from './ManageSubscription';
 
-// Fixed import paths to ../../
-
 interface FirmDashboardProps {
   user: User;
   onLogout: () => void;
@@ -30,9 +28,6 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
   const entriesLeft = user.subscription.allowedEntries === 'infinity' ? 'Unlimited' : Math.max(0, user.subscription.allowedEntries - user.subscription.entriesUsed);
   const canCreateForm = user.subscription.allowedEntries === 'infinity' || user.subscription.entriesUsed < (user.subscription.allowedEntries as number);
   
-  // Expiry Check
-  const isSubscriptionExpired = user.subscription.status === 'inactive' && typeof user.subscription.allowedEntries === 'number' && user.subscription.entriesUsed >= user.subscription.allowedEntries;
-
   const totalForms = forms.length;
   const activeForms = forms.filter(f => f.isApproved && !f.studentSubmission).length;
   const filledForms = forms.filter(f => !!f.studentSubmission).length;
@@ -264,7 +259,7 @@ const FirmDashboard = ({ user, onLogout, refreshUser, onNavigate }: FirmDashboar
                 <div className="stat-icon-container">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                     </svg>
                 </div>
             </div>
             <div className={`stat-card highlight ${!canCreateForm ? 'locked' : ''}`}>
