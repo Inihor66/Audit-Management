@@ -233,6 +233,7 @@ export default function App() {
         }
 
         if (currentUser && page === 'form_details' && selectedFormId) {
+            // FIXED: Removed onNavigate prop which caused type error
             return <FormDetailsPage formId={selectedFormId} user={currentUser} onBack={() => handleNavigate('dashboard')} refreshUser={refreshUser} onLogout={handleLogout} />;
         }
         
