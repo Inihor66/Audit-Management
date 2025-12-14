@@ -8,6 +8,8 @@ import { Modal } from '../../components/Modal';
 import { ShareIcon } from '../../components/icons/ShareIcon';
 import ManageSubscription from '../firm/ManageSubscription';
 
+// Fixed imports to ../../
+
 interface AdminDashboardProps {
   user: User;
   onLogout: () => void;
